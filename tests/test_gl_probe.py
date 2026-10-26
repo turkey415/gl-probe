@@ -453,6 +453,14 @@ if True:
     w.change("mld0", hidden=True); settle()
     sent = [p for f, p in calls if f == "set_mlo_config"][-1]
     check("hide a network: keeps its name and password", sent["hidden"] is True and sent["ssid"] == "GL-MLO" and sent["key"] == "old-key-123")
+    check("MLO saves send init, as GL.iNet's own page does (without it GL refuses)", sent.get("init") is True)
+    real_run = WF.subprocess.run
+    WF.subprocess.run = lambda *a, **k: types.SimpleNamespace(stdout=json.dumps({"error": {"message": "Invalid params", "code": -32602}}))
+    try:
+        WF.gl("wifi", "set_mlo_config", {}); check("a GL.iNet JSON-RPC error is a failure, not a success", False)
+    except ValueError as e:
+        check("a GL.iNet JSON-RPC error is a failure, not a success", "Invalid params" in str(e))
+    WF.subprocess.run = real_run
     w.change("wifi2g", hidden=False); settle()
     sent = [p for f, p in calls if f == "set_config"][-1]
     check("make a hidden network visible", sent["hidden"] is False and sent["ssid"] == "GL-2G")

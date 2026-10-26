@@ -25,6 +25,9 @@ def gl(module, func, params=None, timeout=10):
         reply = json.loads(out or "{}")
     except (OSError, subprocess.SubprocessError, ValueError) as e:
         raise ValueError(f"GL.iNet did not answer ({e})") from None
+    err = reply.get("error")
+    if isinstance(err, dict):  # a JSON-RPC error, e.g. {"message": "Invalid params", "code": -32602}
+        raise ValueError(f"GL.iNet refused it: {err.get('message') or err.get('err') or 'error'}")
     res = reply.get("result", reply)
     if isinstance(res, dict) and res.get("err_code"):
         raise ValueError(f"GL.iNet: {res.get('err_msg') or 'error'} ({res['err_code']})")
@@ -97,14 +100,14 @@ class Wifi:
         for i in mlo:
             if i["name"] == net_id:
                 func = "set_mlo_config"
-                params = {"name": i["name"], "ssid": ssid, "key": key if key is not None else i.get("key"),
+                params = {"name": i["name"], "init": i.get("init", True), "ssid": ssid, "key": key if key is not None else i.get("key"),
                           "encryption": i.get("encryption"), "hidden": hidden,
                           "random_bssid": i.get("random_bssid", True), "mlo_enable": i.get("mlo_enable", True),
                           "mlo_band": i.get("mlo_band")}  # fmt: skip
         for dev, i in bands:
             if i["name"] == net_id:
                 func = "set_config"
-                params = {"iface_name": i["name"], "ssid": ssid, "key": key if key is not None else i.get("key"),
+                params = {"iface_name": i["name"], "init": i.get("init", True), "ssid": ssid, "key": key if key is not None else i.get("key"),
                           "encryption": i.get("encryption"), "hidden": hidden,
                           "random_bssid": i.get("random_bssid", True), "device": dev.get("device"),
                           "txpower": dev.get("txpower"), "hwmode": dev.get("hwmode"), "htmode": dev.get("htmode"),
