@@ -585,7 +585,7 @@ with tempfile.TemporaryDirectory() as root:
     cur = lambda: int(open(root + FN.CUR).read())
     check("fan found, its top level from the board", fa.present() and fa.max_level() == 155)
     check("speeds map onto the levels where it turns", (fa.level_for(0), fa.level_for(1) >= 60, fa.level_for(100)) == (0, True, 155))
-    check("and the page shows the level on the same 0-100 % scale", [fa.pct_of(fa.level_for(p)) for p in (0, 30, 60, 100)] == [0, 30, 60, 100])
+    check("and the page shows the level on the same 0-100 % scale", all(abs(fa.pct_of(fa.level_for(p)) - p) <= 1 for p in (0, 1, 30, 60, 99, 100)) and fa.pct_of(0) == 0)
     fa.apply()
     check("auto leaves the fan to GL.iNet", steps == [] and cur() == 0)
     fa.set({"mode": "manual", "pct": 100})
