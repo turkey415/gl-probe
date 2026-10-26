@@ -12,7 +12,7 @@ GET /api/auth/me      who is logged in, and whether the first admin still has to
 POST /api/auth/login {"name", "password"}, /api/auth/setup {"name", "password", "owner"}, /api/auth/logout
 
 Logged in:
-GET /api/state, /api/tools?span=30, /api/wifi, /api/tls, /cert.pem, /ports.csv, /api/gxl, /api/screen.bmp
+GET /api/state, /api/tools?span=30, /api/wifi, /api/tls, /cert.pem, /ports.csv, /api/gxl, /api/screen.bmp, /api/fan
 GET /api/deck/state, /api/x/<tool>[/<sub>[/<arg>]], /api/tailscale   (Probe Deck's tools, deckhost.py)
 POST /api/recheck, /api/auth/password {"current", "new"}   (viewers too)
 POST /api/x/<tool>/<action>   (admins, or what that tool lets viewers do)
@@ -21,7 +21,8 @@ POST /api/screen {"mode": "probe" | "gl"}, /api/netmode {"mode": "router" | "ap"
      /api/wifi {"id", "ssid", "key", "hidden"} (any of them; left out = unchanged),
      /api/ping, /api/tick, /api/reflector, /api/speed, /api/blink, /api/log,
      /api/tls/generate {"names", "days"}, /api/tls/upload {"cert", "key"},
-     /api/gxl/settings {"url", "key"}, /api/gxl/send, /api/wol/<action>, /api/settings, /api/tailscale
+     /api/gxl/settings {"url", "key"}, /api/gxl/send, /api/wol/<action>, /api/settings, /api/tailscale,
+     /api/fan {"mode": "auto" | "manual", "pct", "target", "boost"}
 GET /api/users; POST /api/users {"action": "add" | "role" | "password" | "delete", "name", "role", "password"}
 
 In Router mode GL.iNet's firewall keeps this port closed on the WAN side, so only the router's own
@@ -177,6 +178,8 @@ def make_handler(service):
                 if user["role"] != "admin":
                     return self._json(403, {"error": "Admins only"})
                 return self._json(200, {"users": service.auth.listing(), "me": user["name"]})
+            if url.path == "/api/fan" and getattr(service, "fan", None):
+                return self._json(200, service.fan.state())
             if url.path == "/api/screen.bmp":
                 try:
                     return self._send(200, screen_bmp(), "image/bmp")
@@ -299,6 +302,8 @@ def make_handler(service):
                 else:
                     ts.action(body)
                 return self._json(200, {"ok": True})
+            if self.path == "/api/fan":
+                return self._json(200, service.fan.set(body))
             if self.path == "/api/gxl/settings":
                 return self._json(200, service.gxl.settings(body))
             if self.path == "/api/gxl/send":

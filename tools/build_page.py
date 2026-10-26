@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "gl_probe" / "www"
 PD_VIEWS = ["mtr", "hosts", "mdns", "mcast", "cache", "speed", "wake", "stats", "ts"]
 PD_SCRIPTS = ["mtr", "hosts", "mdns", "mcast", "cache", "speed", "stats"]
-GLP_VIEWS = ["port", "log", "mode", "wifi", "ping", "tick", "lan", "finder", "screen", "https", "users"]
+GLP_VIEWS = ["port", "log", "mode", "wifi", "ping", "tick", "lan", "finder", "screen", "fan", "https", "users"]
 
 
 def between(text, start, end, inclusive_end=False):
@@ -133,7 +133,7 @@ SIDEBAR = (
     + mod("router", "Router", "M3 14h18v5H3z M7 16.5h.01 M11 16.5h.01 M8 11a6 6 0 0 1 8 0 M5 8a10 10 0 0 1 14 0",
           [("mode", "Network mode"), ("wifi", "Wi-Fi"), ("screen", "Screen")])
     + mod("sys", "System", "M4 7h9 M17 7h3 M4 17h3 M11 17h9 M15 5v4 M9 15v4",
-          [("stats", "System stats"), ("ts", "Tailscale"), ("https", "HTTPS"), ("users", "Users")])
+          [("stats", "System stats"), ("fan", "Fan"), ("ts", "Tailscale"), ("https", "HTTPS"), ("users", "Users")])
 )
 
 BRAND = ('<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#212120"/>'

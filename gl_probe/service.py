@@ -13,6 +13,7 @@ Runs under procd (gl-probe.init). Threads:
 - the page (web.py), which also starts the tick test, reflector, speed test and port finder
 - the network mode (Router or Access point) and the side switch's position; netmode.lua changes it
 - Wi-Fi names and passwords from the page (wifi.py), through GL.iNet's own calls
+- the fan (fan.py): GL.iNet's automatic control, or a speed held by GL Probe, or a 10 minute boost
 """
 
 import json
@@ -25,7 +26,7 @@ import time
 
 import pc_net as N
 
-from . import auth, deckhost, gxl, tls, tools, web, wifi
+from . import auth, deckhost, fan, gxl, tls, tools, web, wifi
 from .screen import PAGES, Display, Touch
 from .tester import Tester
 
@@ -79,6 +80,7 @@ class Service:
         self.tls = tls.TLS(folder, self.addresses)
         self.deck = deckhost.Deck(self, folder)
         self.gxl = gxl.Gxl(self)
+        self.fan = fan.Fan(self, gl_call=lambda m, f, p=None: wifi.gl(m, f, p))
         self._resolved = {}
         self.netmode = {"mode": None, "switch": None, "switch_set": False, "state": None, "lan_ip": None}
         self.hold_hint = 0  # when a finger on the Mode page passed the first hold: "keep holding"
@@ -370,6 +372,7 @@ class Service:
                        self.touch_loop, self.log_loop, self.netmode_loop):  # fmt: skip
             threading.Thread(target=target, daemon=True, name=target.__name__).start()
         threading.Thread(target=self.pinger.run, args=(self.stop,), daemon=True, name="ping").start()
+        threading.Thread(target=self.fan.loop, args=(self.stop,), daemon=True, name="fan").start()
         web.serve(self, self.config["port"])  # blocks
 
 

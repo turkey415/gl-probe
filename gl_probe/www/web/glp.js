@@ -211,6 +211,50 @@ window.GLP = (() => {
   $('#gp-scr-probe').onclick = () => act('/api/screen', { mode: 'probe' }, '#gp-scrmsg', 'GL Probe draws the screen');
   $('#gp-scr-gl').onclick = () => act('/api/screen', { mode: 'gl' }, '#gp-scrmsg', 'GL.iNet draws the screen');
 
+  // ---------- fan ----------
+  const fC1 = new Chart('#gp-fc1', { ago: true, minTop: 1000, axis: v => v >= 1000 ? (v / 1000).toFixed(v % 1000 ? 1 : 0) + 'k' : v + '' });
+  const fC2 = new Chart('#gp-fc2', { ago: true, minTop: 90, axis: v => v + '°' });
+  let F = null, fBusy = 0;
+  async function loadFan() {
+    try { const r = await fetch('/api/fan', { cache: 'no-store' }); if (!r.ok) return; F = await r.json(); } catch { return; }
+    const f = F;
+    if (!f.present) { $('#gp-flamp').innerHTML = '<span class="dot"></span>no fan on this router'; return; }
+    const eff = f.effective, hot = f.temp >= f.safe_c;
+    $('#gp-flamp').innerHTML = `<span class="dot ${hot ? 'err' : f.rpm ? 'on' : ''}"></span>${f.rpm ? 'spinning' : 'stopped'}`;
+    setSeg('#gp-frpm', f.rpm != null ? Math.round(f.rpm) : '----', 4); $('#gp-fw-rpm').classList.toggle('off', !f.rpm);
+    setSeg('#gp-fnow', f.pct_now ?? '---', 3);
+    $('#gp-fnow2').textContent = `% of full · level ${f.level ?? '-'} of ${f.max}`;
+    setSeg('#gp-ftemp', f.temp != null ? f.temp.toFixed(1) : '---', 4); $('#gp-fw-temp').classList.toggle('alarm', f.temp >= (f.target || 75));
+    $('#gp-ftemp2').textContent = eff === 'auto' && f.target ? `°C · target ${f.target} °C` : '°C';
+    $('#gp-fmode').textContent = eff === 'boost' ? 'BOOST' : eff === 'manual' ? 'MANUAL' : 'AUTO';
+    $('#gp-fmode').style.color = eff === 'boost' ? 'var(--warn)' : '';
+    $('#gp-fmode2').textContent = eff === 'boost' ? `full speed · ${Math.ceil(f.boost_left / 60)} min left, then ${f.mode}` : eff === 'manual' ? `GL Probe holds ${f.pct} %` + (hot ? ' · flat out: CPU too hot' : '') : `GL.iNet's control · aims for ${f.target ?? '?'} °C`;
+    $('#gp-ferr').hidden = !f.error; $('#gp-ferr').textContent = f.error || '';
+    $('#gp-fboost').textContent = eff === 'boost' ? 'Stop boost' : 'Boost: full for 10 min';
+    $('#gp-fboost').className = 'btn ' + (eff === 'boost' ? 'danger' : 'primary');
+    if (Date.now() - fBusy > 4000) {
+      for (const r of document.querySelectorAll('input[name=gp-fmode]')) r.checked = r.value === f.mode;
+      $('#gp-fauto').hidden = f.mode !== 'auto'; $('#gp-fman').hidden = f.mode !== 'manual';
+      if (document.activeElement !== $('#gp-ftarget') && f.target) { $('#gp-ftarget').value = f.target; $('#gp-ftarget2').textContent = f.target + ' °C'; }
+      if (document.activeElement !== $('#gp-fpct')) { $('#gp-fpct').value = f.pct; $('#gp-fpct2').textContent = f.pct + ' %'; }
+    }
+    const ago = t => f.now - t;
+    const s1 = [{ name: 'rpm', color: C.s[0], pts: f.hist.map(h => [ago(h[0]), h[1]]) }], s2 = [{ name: 'CPU °C', color: C.s[1], pts: f.hist.map(h => [ago(h[0]), h[2]]) }];
+    legend('#gp-flg1', s1); legend('#gp-flg2', s2); fC1.set(s1, 600); fC2.set(s2, 600);
+  }
+  async function fanSet(body, text) { fBusy = Date.now(); const r = await act('/api/fan', body, '#gp-fmsg', text); if (r) { F = r; } loadFan(); }
+  for (const r of document.querySelectorAll('input[name=gp-fmode]')) r.onchange = () => {
+    $('#gp-fauto').hidden = r.value !== 'auto'; $('#gp-fman').hidden = r.value !== 'manual';
+    fanSet({ mode: r.value }, r.value === 'auto' ? 'GL.iNet runs the fan' : 'GL Probe holds the speed');
+  };
+  $('#gp-ftarget').oninput = () => { $('#gp-ftarget2').textContent = $('#gp-ftarget').value + ' °C'; fBusy = Date.now(); };
+  $('#gp-ftarget').onchange = () => fanSet({ target: +$('#gp-ftarget').value }, `Target ${$('#gp-ftarget').value} °C`);
+  $('#gp-fpct').oninput = () => { $('#gp-fpct2').textContent = $('#gp-fpct').value + ' %'; fBusy = Date.now(); };
+  $('#gp-fpct').onchange = () => fanSet({ pct: +$('#gp-fpct').value }, `Speed ${$('#gp-fpct').value} %`);
+  $('#gp-fpre').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) { $('#gp-fpct').value = b.dataset.p; $('#gp-fpct2').textContent = b.dataset.p + ' %'; fanSet({ pct: +b.dataset.p }, `Speed ${b.dataset.p} %`); } });
+  $('#gp-fboost').onclick = () => fanSet({ boost: !(F && F.effective === 'boost') }, F && F.effective === 'boost' ? 'Boost stopped' : 'Full speed for 10 minutes');
+  setInterval(() => { if (ME && view === 'fan' && !document.hidden) loadFan(); }, 2000);
+
   // ---------- HTTPS ----------
   async function loadTls() {
     const t = await (await fetch('/api/tls', { cache: 'no-store' })).json().catch(() => ({}));
@@ -274,6 +318,7 @@ window.GLP = (() => {
     if (v === 'wifi') loadWifi();
     if (v === 'screen') screenLoop();
     if (v === 'https') loadTls();
+    if (v === 'fan') loadFan();
     if (v === 'users') loadUsers();
   }
   setInterval(() => { if (ME && TOOLS.includes(view) && !document.hidden) loadTools(); }, 2000);

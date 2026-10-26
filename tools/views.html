@@ -206,6 +206,45 @@
 </main>
 </div>
 
+<!-- ================= FAN ================= -->
+<div class="layout view" id="v-fan" hidden>
+<aside>
+  <section class="card admin-only">
+    <h2>Run the fan</h2>
+    <div class="form">
+      <div class="seg" role="radiogroup" aria-label="Fan mode"><label><input type="radio" name="gp-fmode" value="auto">Auto</label><label><input type="radio" name="gp-fmode" value="manual">Manual</label></div>
+      <div id="gp-fauto">
+        <label class="f">Target temperature <span class="sub">GL.iNet's own control speeds the fan up to hold the CPU here. Lower = the fan comes on sooner and runs more.</span>
+          <span class="row" style="align-items:center"><input type="range" id="gp-ftarget" min="40" max="85" step="1" style="flex:1"><b id="gp-ftarget2" style="flex:none;width:56px;text-align:right">—</b></span></label>
+      </div>
+      <div id="gp-fman" hidden>
+        <label class="f">Speed <span class="sub">Held by GL Probe, also after a reboot. 0 % is off.</span>
+          <span class="row" style="align-items:center"><input type="range" id="gp-fpct" min="0" max="100" step="5" style="flex:1"><b id="gp-fpct2" style="flex:none;width:56px;text-align:right">—</b></span></label>
+        <span class="keys" id="gp-fpre"><button class="key" data-p="0">Off</button><button class="key" data-p="30">Quiet</button><button class="key" data-p="60">Medium</button><button class="key" data-p="100">Full</button></span>
+      </div>
+      <div class="row" style="align-items:center;margin-top:6px"><button class="btn primary" id="gp-fboost" style="flex:none">Boost: full for 10 min</button><span id="gp-fmsg"></span></div>
+      <span class="sub">Whatever the setting, the fan runs flat out from 85 °C. If GL Probe stops, GL.iNet's automatic control takes the fan back.</span>
+    </div>
+  </section>
+</aside>
+<main>
+  <section class="card deck">
+    <h2>Fan <span class="spacer"></span><span class="lamp" id="gp-flamp"></span></h2>
+    <div class="wells">
+      <div class="well wide" id="gp-fw-rpm"><span class="k">Fan speed</span><div id="gp-frpm"></div><span class="un">rpm</span></div>
+      <div class="well"><span class="k">Power</span><div id="gp-fnow"></div><span class="un" id="gp-fnow2">% of full</span></div>
+      <div class="well" id="gp-fw-temp"><span class="k">CPU</span><div id="gp-ftemp"></div><span class="un" id="gp-ftemp2">°C</span></div>
+      <div class="well wide"><span class="k">Mode</span><div class="big-port" id="gp-fmode" style="font-size:22px">—</div><span class="un" id="gp-fmode2">—</span></div>
+    </div>
+  </section>
+  <div class="note crit" id="gp-ferr" hidden></div>
+  <div class="grid2">
+    <section class="card"><h2>Fan speed <span class="spacer"></span><span class="sub">last 10 min</span></h2><div class="legend" id="gp-flg1"></div><div class="chart" id="gp-fc1"></div></section>
+    <section class="card"><h2>CPU temperature <span class="spacer"></span><span class="sub">last 10 min</span></h2><div class="legend" id="gp-flg2"></div><div class="chart" id="gp-fc2"></div></section>
+  </div>
+</main>
+</div>
+
 <!-- ================= HTTPS ================= -->
 <div class="layout view" id="v-https" hidden>
 <aside>

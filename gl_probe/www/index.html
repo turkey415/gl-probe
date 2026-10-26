@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GL Probe</title>
-<!-- Built by tools/build_page.py with Probe Deck 54f3e90: its styles, pages and scripts, plus GL Probe's own. -->
+<!-- Built by tools/build_page.py with Probe Deck c61009a: its styles, pages and scripts, plus GL Probe's own. -->
 <style>
 /* Look and feel copied from iPerf Deck (turkey415/Perf-Deck). */
 :root {
@@ -793,6 +793,7 @@ tr.click { cursor: pointer; } tr.click:hover td { background: rgba(255, 255, 255
     <button type="button" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9 M17 7h3 M4 17h3 M11 17h9 M15 5v4 M9 15v4"/></svg><span class="mn">System</span><span class="dot" data-lamp></span><span class="chev" aria-hidden="true">▾</span></button>
     <div class="items">
       <a href="#stats" data-view="stats"><span class="dot" id="t-stats"></span><span class="nm">System stats</span><span class="badge" id="tb-stats" hidden></span></a>
+      <a href="#fan" data-view="fan"><span class="dot" id="t-fan"></span><span class="nm">Fan</span><span class="badge" id="tb-fan" hidden></span></a>
       <a href="#ts" data-view="ts"><span class="dot" id="t-ts"></span><span class="nm">Tailscale</span><span class="badge" id="tb-ts" hidden></span></a>
       <a href="#https" data-view="https"><span class="dot" id="t-https"></span><span class="nm">HTTPS</span><span class="badge" id="tb-https" hidden></span></a>
       <a href="#users" data-view="users"><span class="dot" id="t-users"></span><span class="nm">Users</span><span class="badge" id="tb-users" hidden></span></a>
@@ -1008,6 +1009,45 @@ tr.click { cursor: pointer; } tr.click:hover td { background: rgba(255, 255, 255
     <div class="row" style="flex-wrap:wrap"><button class="btn" id="gp-scr-probe" style="flex:none">GL Probe</button><button class="btn" id="gp-scr-gl" style="flex:none">GL.iNet</button><span id="gp-scrmsg"></span></div>
     <p class="sub" style="margin:12px 0 0">GL Probe's pages: Summary, Switch, Port, Layer 2, Ping, Mode. Tap or swipe for the next page; hold 1.5 s to hand the screen to GL.iNet's own program (hold 3 s on the Mode page to change the network mode). The tester keeps running with either.</p>
   </section>
+</main>
+</div>
+
+<!-- ================= FAN ================= -->
+<div class="layout view" id="v-fan" hidden>
+<aside>
+  <section class="card admin-only">
+    <h2>Run the fan</h2>
+    <div class="form">
+      <div class="seg" role="radiogroup" aria-label="Fan mode"><label><input type="radio" name="gp-fmode" value="auto">Auto</label><label><input type="radio" name="gp-fmode" value="manual">Manual</label></div>
+      <div id="gp-fauto">
+        <label class="f">Target temperature <span class="sub">GL.iNet's own control speeds the fan up to hold the CPU here. Lower = the fan comes on sooner and runs more.</span>
+          <span class="row" style="align-items:center"><input type="range" id="gp-ftarget" min="40" max="85" step="1" style="flex:1"><b id="gp-ftarget2" style="flex:none;width:56px;text-align:right">—</b></span></label>
+      </div>
+      <div id="gp-fman" hidden>
+        <label class="f">Speed <span class="sub">Held by GL Probe, also after a reboot. 0 % is off.</span>
+          <span class="row" style="align-items:center"><input type="range" id="gp-fpct" min="0" max="100" step="5" style="flex:1"><b id="gp-fpct2" style="flex:none;width:56px;text-align:right">—</b></span></label>
+        <span class="keys" id="gp-fpre"><button class="key" data-p="0">Off</button><button class="key" data-p="30">Quiet</button><button class="key" data-p="60">Medium</button><button class="key" data-p="100">Full</button></span>
+      </div>
+      <div class="row" style="align-items:center;margin-top:6px"><button class="btn primary" id="gp-fboost" style="flex:none">Boost: full for 10 min</button><span id="gp-fmsg"></span></div>
+      <span class="sub">Whatever the setting, the fan runs flat out from 85 °C. If GL Probe stops, GL.iNet's automatic control takes the fan back.</span>
+    </div>
+  </section>
+</aside>
+<main>
+  <section class="card deck">
+    <h2>Fan <span class="spacer"></span><span class="lamp" id="gp-flamp"></span></h2>
+    <div class="wells">
+      <div class="well wide" id="gp-fw-rpm"><span class="k">Fan speed</span><div id="gp-frpm"></div><span class="un">rpm</span></div>
+      <div class="well"><span class="k">Power</span><div id="gp-fnow"></div><span class="un" id="gp-fnow2">% of full</span></div>
+      <div class="well" id="gp-fw-temp"><span class="k">CPU</span><div id="gp-ftemp"></div><span class="un" id="gp-ftemp2">°C</span></div>
+      <div class="well wide"><span class="k">Mode</span><div class="big-port" id="gp-fmode" style="font-size:22px">—</div><span class="un" id="gp-fmode2">—</span></div>
+    </div>
+  </section>
+  <div class="note crit" id="gp-ferr" hidden></div>
+  <div class="grid2">
+    <section class="card"><h2>Fan speed <span class="spacer"></span><span class="sub">last 10 min</span></h2><div class="legend" id="gp-flg1"></div><div class="chart" id="gp-fc1"></div></section>
+    <section class="card"><h2>CPU temperature <span class="spacer"></span><span class="sub">last 10 min</span></h2><div class="legend" id="gp-flg2"></div><div class="chart" id="gp-fc2"></div></section>
+  </div>
 </main>
 </div>
 
@@ -1722,7 +1762,7 @@ const gauge = (label, value, text, level) => { const color = LEVEL_COLOR[level |
 let S = null, D = null, ME = null, timer = 0;
 const isAdmin = () => !!ME && ME.role === 'admin';
 const PAGES = {};
-const VIEWS = ['port', 'log', 'mode', 'wifi', 'ping', 'tick', 'lan', 'finder', 'screen', 'https', 'users', 'mtr', 'hosts', 'mdns', 'mcast', 'cache', 'speed', 'wake', 'stats', 'ts'];
+const VIEWS = ['port', 'log', 'mode', 'wifi', 'ping', 'tick', 'lan', 'finder', 'screen', 'fan', 'https', 'users', 'mtr', 'hosts', 'mdns', 'mcast', 'cache', 'speed', 'wake', 'stats', 'ts'];
 let view = 'port';
 lsSet('pd-speed-src', 'inet');
 function showView() {

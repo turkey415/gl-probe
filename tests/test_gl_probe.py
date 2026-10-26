@@ -564,4 +564,46 @@ check("only labelled rows go to GXL, graded the way GXL reads them", [x["label"]
       and recs[1]["level"] == "check" and recs[1]["why"] == ["Link 100M", "Slow"])
 check("sent to GXL's survey with the agent key", sent["url"] == "http://192.168.10.143:8000/agent/survey" and sent["auth"] == "Agent event-key-1234" and r["updated"] == 1 and r["unknown"] == ["A2"])
 
+# ---------- the fan ----------
+from gl_probe import fan as FN
+with tempfile.TemporaryDirectory() as root:
+    for path, v in (("/sys/class/thermal/cooling_device0/cur_state", "0"), ("/sys/class/thermal/cooling_device0/max_state", "255"),
+                    ("/proc/gl-hw-info/fan_pwm_max", "155"), ("/sys/class/hwmon/hwmon0/fan1_input", "0"), ("/sys/class/thermal/thermal_zone0/temp", "71500")):
+        os.makedirs(os.path.dirname(root + path), exist_ok=True); open(root + path, "w").write(v)
+    class FanSvc:
+        def __init__(self): self.config = {}
+        def set_option(self, k, v): self.config[k] = v
+    glcfg = {"temperature": 75}
+    def glfan(m, f, p=None):
+        if f == "set_config": glcfg.update(p)
+        return dict(glcfg)
+    fs = FanSvc(); fa = FN.Fan(fs, gl_call=glfan, root=root)
+    gl_on = {"v": True}; steps = []
+    fa.gl_running = lambda: gl_on["v"]
+    def gl_fan(start): steps.append("start" if start else "stop"); gl_on["v"] = start
+    fa.gl_fan = gl_fan
+    cur = lambda: int(open(root + FN.CUR).read())
+    check("fan found, its top level from the board", fa.present() and fa.max_level() == 155)
+    check("speeds map onto the levels where it turns", (fa.level_for(0), fa.level_for(1) >= 60, fa.level_for(100)) == (0, True, 155))
+    check("and the page shows the level on the same 0-100 % scale", [fa.pct_of(fa.level_for(p)) for p in (0, 30, 60, 100)] == [0, 30, 60, 100])
+    fa.apply()
+    check("auto leaves the fan to GL.iNet", steps == [] and cur() == 0)
+    fa.set({"mode": "manual", "pct": 100})
+    check("manual stops gl_fan and holds the speed", steps == ["stop"] and cur() == 155 and fs.config["fan_mode"] == "manual")
+    fa.set({"pct": 0})
+    check("manual 0 % is off", cur() == 0)
+    open(root + FN.TEMP, "w").write("86000"); fa.apply()
+    check("flat out from 85 °C whatever the setting", cur() == 155)
+    open(root + FN.TEMP, "w").write("70000")
+    fa.set({"boost": True})
+    check("boost is full speed for a while", cur() == 155 and fa.effective() == "boost" and fa.state()["boost_left"] > 500)
+    fs.config["fan_boost_until"] = time.time() - 1; fa.apply()
+    check("after boost it goes back to the setting", cur() == 0 and fa.effective() == "manual")
+    fa.set({"mode": "auto", "target": 60})
+    check("auto again starts gl_fan, and the target is GL.iNet's setting", steps[-1] == "start" and glcfg["temperature"] == 60 and fa.state()["target"] == 60)
+    try:
+        fa.set({"target": 20}); check("silly targets refused", False)
+    except ValueError:
+        check("silly targets refused", True)
+
 print(f"\n{ok} checks passed")

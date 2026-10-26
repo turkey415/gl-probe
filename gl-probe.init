@@ -19,4 +19,7 @@ start_service() {
 stop_service() {
 	# never leave the screen dark: hand it back to GL.iNet's program
 	[ -x /etc/init.d/gl_screen ] && /etc/init.d/gl_screen start >/dev/null 2>&1
+	# and the fan back to GL.iNet's automatic control, in case GL Probe was holding it
+	[ -x /etc/init.d/gl_fan ] && /etc/init.d/gl_fan start >/dev/null 2>&1
+	true
 }
