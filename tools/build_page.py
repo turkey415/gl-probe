@@ -150,6 +150,7 @@ TEMPLATE = """<!doctype html>
 /* GL Probe's additions */
 #v-speed .sx-src { display: none; }               /* the internet test only: LAN speed has its own page */
 #v-wake section:has(#seen) { display: none; }     /* fed by Probe Deck's Watchdog, which GL Probe doesn't have */
+#v-hosts a[href^="#trace"] { display: none; }     /* Probe Deck's Trace page isn't in GL Probe */
 .ev { grid-template-columns: 76px 12px minmax(0, 1fr); }
 </style>
 </head>
