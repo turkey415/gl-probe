@@ -1,7 +1,7 @@
 """The router's tools, from the desktop app's Tools page: ping with the event timeline, the tick test,
 the reflector, the speed test (iperf3), the port finder and the port log.
 
-Each tool is a small object the service owns; the phone page starts and stops them and reads
+Each tool is a small object the service owns; the page starts and stops them and reads
 state(). They use the same pc_net code as the desktop app: TickTest, Reflector, tick_summary and
 its grades, run_iperf, event_impact, bucket_samples.
 """
@@ -41,7 +41,7 @@ def icmp_checksum(data):
     return ~s & 0xFFFF
 
 
-def echo_request(ident, seq, payload=b"PorkChopCheck-ping"):
+def echo_request(ident, seq, payload=b"GL-Probe-ping"):
     head = struct.pack("!BBHHH", 8, 0, 0, ident, seq)
     return struct.pack("!BBHHH", 8, 0, icmp_checksum(head + payload), ident, seq) + payload
 
@@ -169,7 +169,7 @@ class Tick:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 if src:
                     s.bind((src, 0))
-                s.sendto(b"PorkChopCheck warm-up", (host, port))
+                s.sendto(b"GL-Probe warm-up", (host, port))
         except OSError:
             pass
         time.sleep(0.3)
@@ -208,14 +208,14 @@ class ReflectorTool:
     """The far end of a tick test, on the router: one router at the game server, another at a seat.
     The WAN firewall is opened for its UDP port only while it runs."""
 
-    RULE = "pcc_reflector"
+    RULE = "glp_reflector"
 
     def __init__(self, port=N.TICK_PORT):
         self.port, self.ref = port, None
 
     def _firewall(self, open_):
         if open_:
-            for cmd in (f"set firewall.{self.RULE}=rule", f"set firewall.{self.RULE}.name=PorkChopCheck-reflector",
+            for cmd in (f"set firewall.{self.RULE}=rule", f"set firewall.{self.RULE}.name=GL-Probe-reflector",
                         f"set firewall.{self.RULE}.src=wan", f"set firewall.{self.RULE}.proto=udp",
                         f"set firewall.{self.RULE}.dest_port={self.port}", f"set firewall.{self.RULE}.target=ACCEPT"):  # fmt: skip
                 run(["uci"] + cmd.split(" ", 1))
@@ -334,7 +334,7 @@ LOG_FIELDS = ["time", "switch", "port", "vlan", "voice_vlan", "speed", "duplex",
 
 class PortLog:
     """One row per switch + port, updated whenever CDP/LLDP names it (data/ports.csv on the desktop),
-    and history.csv with every save. Kept in /etc/pcc-router so it survives a reboot."""
+    and history.csv with every save. Kept in /etc/gl-probe so it survives a reboot."""
 
     def __init__(self, folder):
         self.ports_path = os.path.join(folder, "ports.csv")

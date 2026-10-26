@@ -1,3 +1,3 @@
-"""PorkChopCheck on a GL.iNet router: a switch-port tester on the WAN port, with a phone page."""
+"""GL Probe: a GL.iNet travel router as a pocket switch-port tester, with Probe Deck's tools."""
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"

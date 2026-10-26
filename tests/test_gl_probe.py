@@ -1,12 +1,12 @@
-"""The router port tester (router/pcc_router): frames in, verdict out, screen pages, the phone page.
+"""GL Probe: frames in, verdict out, screen pages, the page and its API, Probe Deck's tools.
 Runs on a PC; nothing here needs a router."""
 import json, os, socket, struct, sys, tempfile, threading, time, types, urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, ".."))
 sys.path.insert(0, os.path.join(HERE, "..", "router"))
 import pc_net as N
-from pcc_router import screen, web
-from pcc_router.tester import Tester, findings
+from gl_probe import screen, web
+from gl_probe.tester import Tester, findings
 ok = 0
 def check(name, cond, extra=""):
     global ok
@@ -160,16 +160,16 @@ with tempfile.TemporaryDirectory() as d:
     disp.light(True)
     check("lighting powers the backlight at full brightness", disp.lit() and open(os.path.join(d, "brightness")).read() == "11")
 
-# ---------- the phone page ----------
-from pcc_router import auth as A
+# ---------- the page and its API ----------
+from gl_probe import auth as A
 AUTH_DIR = tempfile.mkdtemp()
 class FakeService:
     def __init__(self):
-        self.tester, self.config, self.page = good, {"screen": "pcc"}, 0
+        self.tester, self.config, self.page = good, {"screen": "probe"}, 0
         self.recheck = threading.Event(); self.probed = threading.Event()
         self.auth = A.Auth(AUTH_DIR, owner_check=lambda pw: pw == "owner-pass")
     def set_screen(self, mode):
-        if mode not in ("pcc", "gl"): raise ValueError(mode)
+        if mode not in ("probe", "gl"): raise ValueError(mode)
         self.config["screen"] = mode
     def dhcp_probe(self): self.probed.set()
     def screen_snap(self):
@@ -201,8 +201,11 @@ def call(path, body=None, cookie=None, ctype="application/json"):
 def post(path, body): return call(path, body)[:2]
 def jar(set_cookie): return set_cookie.split(";")[0] if set_cookie else ""
 html = call("/", cookie="")[1]
-check("page served without a login (it shows the login itself)", "PorkChopCheck" in html and 'id="gate"' in html)
-check("hidden tabs really hide", "[hidden] { display: none !important; }" in html and 'id="tab-tools" hidden' in html)
+check("page served without a login (it shows the login itself)", "<title>GL Probe</title>" in html and 'id="gate"' in html and 'id="f-setup"' in html)
+check("one page: GL Probe's views and Probe Deck's", all(f'id="v-{v}"' in html for v in ("port", "log", "mode", "wifi", "ping", "tick", "lan", "finder", "screen", "https", "users",
+      "mtr", "hosts", "mdns", "mcast", "cache", "speed", "wake", "stats", "ts")))
+check("its scripts are served", "window.GLP" in call("/web/glp.js", cookie="")[1] and call("/web/stats.js", cookie="")[0] == 200 and call("/vendor/us-map.json", cookie="")[0] == 200)
+check("only its own files", call("/web/../auth.py", cookie="")[0] in (401, 404) and call("/gl_probe/auth.py", cookie="")[0] in (401, 404) and call("/web/x.py", cookie="")[0] in (401, 404))
 check("state needs a login", call("/api/state", cookie="")[0] == 401)
 check("first visit asks for setup", call("/api/auth/me", cookie="")[1] == {"user": None, "setup": True})
 check("setup needs the router's admin password", call("/api/auth/setup", {"name": "kt", "password": "longpass1", "owner": "wrong"}, cookie="")[0] == 400)
@@ -212,10 +215,10 @@ check("setup makes the admin and logs in", code == 200 and "HttpOnly" in sc and 
 check("setup only once", call("/api/auth/setup", {"name": "x", "password": "longpass1", "owner": "owner-pass"}, cookie="")[0] == 400)
 check("a form post from another site is refused", call("/api/screen", {"mode": "gl"}, ctype="text/plain")[0] == 415)
 state = call("/api/state")[1]
-check("state served", state["switch"]["port"] == "GigabitEthernet1/0/14" and state["screen"] == "pcc")
+check("state served", state["switch"]["port"] == "GigabitEthernet1/0/14" and state["screen"] == "probe")
 check("switch the screen to GL.iNet", post("/api/screen", {"mode": "gl"}) == (200, {"screen": "gl"}) and svc.config["screen"] == "gl")
 check("a bad screen mode is refused", post("/api/screen", {"mode": "nope"})[0] == 400)
-check("network mode shown on the page", state["netmode"]["mode"] == "router" and 'id="nmseg"' in html)
+check("network mode shown on the page", state["netmode"]["mode"] == "router" and 'id="gp-to-ap"' in html)
 check("change the network mode from the page", post("/api/netmode", {"mode": "ap"})[0] == 200 and svc.netmode_set == "ap")
 check("a bad network mode is refused", post("/api/netmode", {"mode": "bridge"})[0] == 400)
 check("re-check", post("/api/recheck", {})[0] == 200 and svc.recheck.is_set() and svc.probed.wait(2))
@@ -226,7 +229,7 @@ code, _, sc = call("/api/auth/login", {"name": "crew", "password": "crewpass1"},
 COOKIE["v"] = jar(sc)
 check("viewer logs in", code == 200 and call("/api/auth/me")[1]["user"]["role"] == "viewer")
 check("viewer can look and re-check", call("/api/state")[0] == 200 and post("/api/recheck", {})[0] == 200)
-check("viewer can't change things", post("/api/screen", {"mode": "pcc"})[0] == 403 and post("/api/netmode", {"mode": "router"})[0] == 403 and call("/api/users")[0] == 403)
+check("viewer can't change things", post("/api/screen", {"mode": "probe"})[0] == 403 and post("/api/netmode", {"mode": "router"})[0] == 403 and call("/api/users")[0] == 403)
 check("log out", call("/api/auth/logout", {})[0] == 200 and call("/api/state")[0] == 401)
 COOKIE["v"] = admin_cookie
 check("last admin can't be made a viewer", post("/api/users", {"action": "role", "name": "kt", "role": "viewer"})[0] == 400)
@@ -234,7 +237,7 @@ srv.shutdown()
 
 # ---------- HTTPS: the certificate, and http and https on one port ----------
 import ssl
-from pcc_router import tls as TL
+from gl_probe import tls as TL
 with tempfile.TemporaryDirectory() as d:
     t = TL.TLS(d, lambda: ["192.168.10.235"])
     t.ensure()
@@ -288,9 +291,9 @@ with tempfile.TemporaryDirectory() as d:
     tsrv.shutdown()
 
 # ---------- the service keeps the screen choice ----------
-from pcc_router import service as S
+from gl_probe import service as S
 with tempfile.TemporaryDirectory() as d:
-    path = os.path.join(d, "pcc", "config.json")
+    path = os.path.join(d, "glp", "config.json")
     calls = []
     S.run = lambda cmd, timeout=10: calls.append(cmd) or ""
     svc = S.Service(path)
@@ -326,7 +329,7 @@ with tempfile.TemporaryDirectory() as d:
     except ValueError as e:
         check("AP mode needs a cable in WAN", "cable" in str(e))
     S.read = real_read
-    svc.set_screen("pcc")
+    svc.set_screen("probe")
     check("ours stops theirs and lights the screen", ["/etc/init.d/gl_screen", "stop"] in calls and ["light", True] in calls)
     try:
         svc.set_screen("other"); check("bad mode refused", False)
@@ -334,7 +337,7 @@ with tempfile.TemporaryDirectory() as d:
         check("bad mode refused", True)
 
 # ---------- tools ----------
-from pcc_router import tools as T
+from gl_probe import tools as T
 req = T.echo_request(0x1234, 7)
 check("icmp checksum checks out", T.icmp_checksum(req) == 0)
 reply = bytes([0x45]) + bytes(19) + bytes([0, 0]) + req[2:4] + req[4:]
@@ -381,9 +384,9 @@ check("port finder stops with the link up", not blink.state()["running"] and cmd
 rt = T.ReflectorTool(0); cmds.clear()
 rt.ref = type("R", (), {"stop": lambda self: None, "count": 0, "peers": {}})()
 rt._firewall(True)
-check("reflector opens only its UDP port on the WAN", ["uci", "set", "firewall.pcc_reflector.dest_port=0"] in cmds and ["uci", "set", "firewall.pcc_reflector.src=wan"] in cmds)
+check("reflector opens only its UDP port on the WAN", ["uci", "set", "firewall.glp_reflector.dest_port=0"] in cmds and ["uci", "set", "firewall.glp_reflector.src=wan"] in cmds)
 rt.set(False)
-check("and closes it again", ["uci", "-q", "delete", "firewall.pcc_reflector"] in cmds and rt.ref is None)
+check("and closes it again", ["uci", "-q", "delete", "firewall.glp_reflector"] in cmds and rt.ref is None)
 
 with tempfile.TemporaryDirectory() as d:
     log = T.PortLog(d)
@@ -417,7 +420,7 @@ with tempfile.TemporaryDirectory() as d:
     tsrv.shutdown()
 
 # ---------- Wi-Fi name and password ----------
-from pcc_router import wifi as WF
+from gl_probe import wifi as WF
 MLO = {"ifaces": [{"name": "mld0", "ssid": "GL-MLO", "key": "old-key-123", "hidden": False, "mlo_enable": True, "encryption": "sae-mixed", "mlo_band": ["2g", "5g"], "guest": False}]}
 CFG = [{"band": "2G", "device": "wifi0", "channel": "auto", "ifaces": [
           {"name": "wifi2g", "ssid": "GL-2G", "key": "k2-123456", "enabled": True, "hidden": True, "encryption": "psk2", "guest": False},
@@ -473,8 +476,8 @@ if True:
     check("viewers can't change Wi-Fi", post("/api/wifi", {"id": "wifi2g", "ssid": "Nope"})[0] == 403)
     wsrv.shutdown()
 
-# ---------- the Deck: Probe Deck's pages on the router ----------
-from pcc_router import deckhost as D
+# ---------- Probe Deck's tools in GL Probe ----------
+from gl_probe import deckhost as D
 class DeckSvc:
     def __init__(self):
         self.tester, self.iface, self.netmode = good, "eth0", {"mode": "router"}
@@ -484,16 +487,13 @@ check("the probe shim: the switch port", pr.neighbor == {"port": "GigabitEtherne
 check("router mode tests on the WAN port", pr.l3() == "eth0" and pr.watch.iface == "eth0")
 pr.s.netmode = {"mode": "ap"}
 check("Access point mode: the address is on the LAN bridge", pr.l3() == "br-lan")
-dk = D.Deck.__new__(D.Deck)
-check("Deck files: the page, page scripts and the map only", dk.file("index.html")[0] and dk.file("web/stats.js")[0] and dk.file("vendor/us-map.json")[0]
-      and dk.file("../deckhost.py") == (None, None) and dk.file("web/../../auth.py") == (None, None) and dk.file("appbase.py") == (None, None))
-html_deck = dk.file("index.html")[0].decode()
-check("Deck page has every view and its scripts", all(f'id="v-{v}"' in html_deck for v in ("mtr", "hosts", "mdns", "mcast", "cache", "speed", "wake", "stats", "ts"))
-      and all(f'/deck/web/{v}.js' in html_deck for v in ("mtr", "hosts", "mdns", "mcast", "cache", "speed", "stats")))
-check("Deck speed page has only the internet test", "LAN speed test" not in html_deck and 'id="f-inet"' in html_deck)
+check("static files: the page, its scripts and the map only", web.static_file("/")[0] and web.static_file("/web/glp.js")[0] and web.static_file("/vendor/us-map.json")[0]
+      and web.static_file("/web/../deckhost.py") == (None, None) and web.static_file("/deckhost.py") == (None, None) and web.static_file("/web/stats.py") == (None, None))
+html_page = web.static_file("/")[0].decode()
+check("the page loads every script", all(f'/web/{v}.js' in html_page for v in ("glp", "mtr", "hosts", "mdns", "mcast", "cache", "speed", "stats")))
+check("internet speed page has only the internet test", 'id="sp-server"' not in html_page and 'id="st-list"' not in html_page and 'id="f-inet"' in html_page)
 class FakeDeck:
     def __init__(self): self.posts = []
-    def file(self, rel): return dk.file(rel)
     def state(self, user): return {"name": "r", "user": user}
     def app_get(self, name, sub, arg, q, user):
         if name != "stats": raise LookupError(name)
@@ -510,7 +510,7 @@ dsvc = DeckService()
 dsrv = web.Server(("127.0.0.1", 0), web.make_handler(dsvc))
 threading.Thread(target=dsrv.serve_forever, daemon=True).start()
 base_url = f"http://127.0.0.1:{dsrv.server_address[1]}"
-check("the Deck page loads without a login (it checks itself)", "PorkChopCheck Deck" in call("/deck", cookie="")[1])
+check("the old /deck address goes to the page", call("/deck", cookie="")[0] == 200 and "<title>GL Probe</title>" in call("/deck", cookie="")[1])
 check("Deck data needs a login", call("/api/deck/state", cookie="")[0] == 401 and call("/api/x/stats", cookie="")[0] == 401)
 COOKIE["v"] = admin_cookie
 check("Deck tool data", call("/api/x/stats")[1] == {"cpu": 5} and call("/api/x/nope")[0] == 404)
@@ -522,7 +522,7 @@ check("viewers can look at Deck tools", call("/api/x/stats")[0] == 200)
 dsrv.shutdown()
 
 # ---------- Send to GXL ----------
-from pcc_router import gxl as G
+from gl_probe import gxl as G
 import io
 class GxlSvc:
     def __init__(self):

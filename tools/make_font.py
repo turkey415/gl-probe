@@ -1,7 +1,7 @@
-"""Builds router/pcc_router/font.py: bitmap fonts for the router's little screen, which has no font
+"""Builds gl_probe/font.py: bitmap fonts for the router's little screen, which has no font
 library. Run on a PC with Pillow, from the repo root:
 
-    python3 router/tools/make_font.py [fonts folder]   (default /usr/share/fonts/google-noto)
+    python3 tools/make_font.py [fonts folder]   (default /usr/share/fonts/google-noto)
 
 The small size uses Noto Sans Mono Condensed Medium: at 12 px the Bold strokes fill in the gaps of
 8, 0, 6 and 3, which made addresses hard to read. Medium keeps the same 6 px width, so every page
@@ -23,7 +23,7 @@ CHARS = "".join(chr(c) for c in range(32, 127)) + "·▲▼°"
 
 
 def build(folder):
-    out = ['"""Bitmap fonts for the router screen, made by router/tools/make_font.py from Noto Sans Mono',
+    out = ['"""Bitmap fonts for the router screen, made by tools/make_font.py from Noto Sans Mono',
            '(SIL Open Font License). Each glyph is rows of bits, packed, base64; all glyphs in a size',
            'share one width (monospace)."""', "", "FONTS = {"]
     for name, px in SIZES.items():
@@ -62,6 +62,6 @@ def build(folder):
 
 if __name__ == "__main__":
     src = sys.argv[1] if len(sys.argv) > 1 else "/usr/share/fonts/google-noto"
-    with open("router/pcc_router/font.py", "w", encoding="utf-8") as f:
+    with open("gl_probe/font.py", "w", encoding="utf-8") as f:
         f.write(build(src))
-    print("wrote router/pcc_router/font.py")
+    print("wrote gl_probe/font.py")

@@ -2,8 +2,8 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PorkChopCheck Deck</title>
-<!-- Built by router/tools/build_deck.py from Probe Deck 54f3e90: its styles, pages and scripts, on the router. -->
+<title>GL Probe</title>
+<!-- Built by tools/build_page.py with Probe Deck 54f3e90: its styles, pages and scripts, plus GL Probe's own. -->
 <style>
 /* Look and feel copied from iPerf Deck (turkey415/Perf-Deck). */
 :root {
@@ -692,25 +692,68 @@ tr.click { cursor: pointer; } tr.click:hover td { background: rgba(255, 255, 255
 #mc-list tr.sel td { background: rgba(255, 176, 0, .06); }
 </style>
 <style>
-/* the router's additions */
-#v-speed .sx-src { display: none; }      /* only the internet test here */
-#v-wake section:has(#seen) { display: none; }   /* fed by Probe Deck's Watchdog, which the router doesn't have */
-.backlink { text-decoration: none; }
+/* GL Probe's additions */
+#v-speed .sx-src { display: none; }               /* the internet test only: LAN speed has its own page */
+#v-wake section:has(#seen) { display: none; }     /* fed by Probe Deck's Watchdog, which GL Probe doesn't have */
+.ev { grid-template-columns: 76px 12px minmax(0, 1fr); }
 </style>
 </head>
 <body class="gated">
 <div id="sx-tip" hidden></div>
+<div class="gate" id="gate">
+  <section class="card">
+    <div class="brand"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#212120"/><path d="M7 19h18v6H7z M11 22h.01 M15 22h.01 M10 15a8 8 0 0 1 12 0 M6 11a13 13 0 0 1 20 0" fill="none" stroke="#3ddc5a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>GL Probe</div>
+    <div class="big-port" id="g-title">CONNECTING</div>
+    <p class="sub" id="g-sub" style="text-align:center;margin:4px 0 14px"></p>
+    <form class="form" id="f-signin" hidden>
+      <label class="f">User name <input type="text" id="g-name" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+      <label class="f">Password <input type="password" id="g-pw" autocomplete="current-password"></label>
+      <button class="btn primary" type="submit">Log in</button>
+    </form>
+    <form class="form" id="f-setup" hidden>
+      <label class="f">Router admin password <span class="sub">The one for GL.iNet's admin page. It proves the router is yours; it isn't stored.</span><input type="password" id="s1-owner" autocomplete="off"></label>
+      <label class="f">Admin user name <input type="text" id="s1-name" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. admin"></label>
+      <label class="f">Password <input type="password" id="s1-pw" autocomplete="new-password" placeholder="8 characters or more"></label>
+      <label class="f">Password again <input type="password" id="s1-pw2" autocomplete="new-password"></label>
+      <button class="btn primary" type="submit">Create admin</button>
+    </form>
+    <div class="msg" id="g-err" hidden style="margin-top:10px"></div>
+  </section>
+</div>
 <header class="top">
   <button class="btn ghost navbtn ro-ok" id="b-nav" type="button" aria-label="Show the page list" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-  <div class="brand"><span style="font-size:20px">🐷</span> PorkChopCheck Deck</div>
+  <div class="brand"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#212120"/><path d="M7 19h18v6H7z M11 22h.01 M15 22h.01 M10 15a8 8 0 0 1 12 0 M6 11a13 13 0 0 1 20 0" fill="none" stroke="#3ddc5a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>GL Probe</div>
   <span class="pill"><span class="dot" id="h-dot"></span><span id="h-name">connecting…</span></span>
   <span class="spacer"></span>
-  <a class="btn ghost backlink ro-ok" href="/">◂ Port tester</a>
   <span class="pill" id="h-temp">— °C</span>
   <span class="pill userpill ro-ok" id="h-user"><span id="h-uname">—</span><span class="role" id="h-role"></span><button type="button" id="b-logout">Log out</button></span>
 </header>
 <div class="shell">
 <nav class="side ro-ok" id="side" aria-label="Pages">
+  <a class="well jack" href="#port" title="This jack: open the Overview">
+    <span class="k">This jack</span>
+    <span class="big-port" id="sj-port">—</span>
+    <span class="wsub" id="sj-sub">connecting…</span>
+    <span class="lamps"><span class="lamp"><span class="dot" id="sj-link"></span>Link</span><span class="lamp"><span class="dot" id="sj-dhcp"></span>DHCP</span><span class="lamp"><span class="dot" id="sj-dns"></span>DNS</span><span class="lamp"><span class="dot" id="sj-net"></span>Net</span></span>
+    <span class="k pd" id="sj-pd"></span>
+  </a>
+  <div class="mod" data-mod="port">
+    <button type="button" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14v11H5z M8 16v3 M12 16v3 M16 16v3"/></svg><span class="mn">Port</span><span class="dot" data-lamp></span><span class="chev" aria-hidden="true">▾</span></button>
+    <div class="items">
+      <a href="#port" data-view="port"><span class="dot" id="t-port"></span><span class="nm">Overview</span><span class="badge" id="tb-port" hidden></span></a>
+      <a href="#log" data-view="log"><span class="dot" id="t-log"></span><span class="nm">Port log</span><span class="badge" id="tb-log" hidden></span></a>
+    </div>
+  </div>
+  <div class="mod" data-mod="tests">
+    <button type="button" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0 M12 18l4-6"/></svg><span class="mn">Tests</span><span class="dot" data-lamp></span><span class="chev" aria-hidden="true">▾</span></button>
+    <div class="items">
+      <a href="#ping" data-view="ping"><span class="dot" id="t-ping"></span><span class="nm">Ping</span><span class="badge" id="tb-ping" hidden></span></a>
+      <a href="#tick" data-view="tick"><span class="dot" id="t-tick"></span><span class="nm">Tick test</span><span class="badge" id="tb-tick" hidden></span></a>
+      <a href="#lan" data-view="lan"><span class="dot" id="t-lan"></span><span class="nm">LAN speed</span><span class="badge" id="tb-lan" hidden></span></a>
+      <a href="#speed" data-view="speed"><span class="dot" id="t-speed"></span><span class="nm">Internet speed</span><span class="badge" id="tb-speed" hidden></span></a>
+      <a href="#finder" data-view="finder"><span class="dot" id="t-finder"></span><span class="nm">Port finder</span><span class="badge" id="tb-finder" hidden></span></a>
+    </div>
+  </div>
   <div class="mod" data-mod="net">
     <button type="button" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v5H4z M4 14h16v5H4z M7.5 7.5h.01 M7.5 16.5h.01 M12 10v4"/></svg><span class="mn">Network</span><span class="dot" data-lamp></span><span class="chev" aria-hidden="true">▾</span></button>
     <div class="items">
@@ -719,18 +762,15 @@ tr.click { cursor: pointer; } tr.click:hover td { background: rgba(255, 255, 255
       <a href="#mdns" data-view="mdns"><span class="dot" id="t-mdns"></span><span class="nm">mDNS</span><span class="badge" id="tb-mdns" hidden></span></a>
       <a href="#mcast" data-view="mcast"><span class="dot" id="t-mcast"></span><span class="nm">Multicast</span><span class="badge" id="tb-mcast" hidden></span></a>
       <a href="#cache" data-view="cache"><span class="dot" id="t-cache"></span><span class="nm">LAN cache</span><span class="badge" id="tb-cache" hidden></span></a>
-    </div>
-  </div>
-  <div class="mod" data-mod="tests">
-    <button type="button" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0 M12 18l4-6"/></svg><span class="mn">Tests</span><span class="dot" data-lamp></span><span class="chev" aria-hidden="true">▾</span></button>
-    <div class="items">
-      <a href="#speed" data-view="speed"><span class="dot" id="t-speed"></span><span class="nm">Internet speed</span><span class="badge" id="tb-speed" hidden></span></a>
-    </div>
-  </div>
-  <div class="mod" data-mod="tools">
-    <button type="button" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg><span class="mn">Tools</span><span class="dot" data-lamp></span><span class="chev" aria-hidden="true">▾</span></button>
-    <div class="items">
       <a href="#wake" data-view="wake"><span class="dot" id="t-wake"></span><span class="nm">Wake</span><span class="badge" id="tb-wake" hidden></span></a>
+    </div>
+  </div>
+  <div class="mod" data-mod="router">
+    <button type="button" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h18v5H3z M7 16.5h.01 M11 16.5h.01 M8 11a6 6 0 0 1 8 0 M5 8a10 10 0 0 1 14 0"/></svg><span class="mn">Router</span><span class="dot" data-lamp></span><span class="chev" aria-hidden="true">▾</span></button>
+    <div class="items">
+      <a href="#mode" data-view="mode"><span class="dot" id="t-mode"></span><span class="nm">Network mode</span><span class="badge" id="tb-mode" hidden></span></a>
+      <a href="#wifi" data-view="wifi"><span class="dot" id="t-wifi"></span><span class="nm">Wi-Fi</span><span class="badge" id="tb-wifi" hidden></span></a>
+      <a href="#screen" data-view="screen"><span class="dot" id="t-screen"></span><span class="nm">Screen</span><span class="badge" id="tb-screen" hidden></span></a>
     </div>
   </div>
   <div class="mod" data-mod="sys">
@@ -738,6 +778,8 @@ tr.click { cursor: pointer; } tr.click:hover td { background: rgba(255, 255, 255
     <div class="items">
       <a href="#stats" data-view="stats"><span class="dot" id="t-stats"></span><span class="nm">System stats</span><span class="badge" id="tb-stats" hidden></span></a>
       <a href="#ts" data-view="ts"><span class="dot" id="t-ts"></span><span class="nm">Tailscale</span><span class="badge" id="tb-ts" hidden></span></a>
+      <a href="#https" data-view="https"><span class="dot" id="t-https"></span><span class="nm">HTTPS</span><span class="badge" id="tb-https" hidden></span></a>
+      <a href="#users" data-view="users"><span class="dot" id="t-users"></span><span class="nm">Users</span><span class="badge" id="tb-users" hidden></span></a>
     </div>
   </div>
   <span class="k ver" id="sj-ver"></span>
@@ -745,6 +787,278 @@ tr.click { cursor: pointer; } tr.click:hover td { background: rgba(255, 255, 255
 <div class="scrim" id="scrim"></div>
 <div class="content">
 <div class="banner" id="offline" hidden style="margin:14px 20px 0">Lost contact with the router. Retrying…</div>
+<!-- GL Probe's own views, in Probe Deck's style. build_page.py puts them in front of Probe Deck's. -->
+
+<!-- ================= OVERVIEW ================= -->
+<div class="layout one view" id="v-port" hidden>
+<main>
+  <section class="card deck">
+    <h2>Port <span class="spacer"></span><span class="lamp" id="gp-lamp"></span></h2>
+    <div class="wells">
+      <div class="well wide" id="gp-wport"><span class="k">Switch port</span><div class="big-port" id="gp-port">—</div><div class="wsub" id="gp-switch">Waiting for CDP / LLDP (the switch sends one every 30 to 60 s)</div><div class="wsub" id="gp-plat"></div></div>
+      <div class="well" id="gp-wlink"><span class="k">Link</span><div id="gp-speed"></div><span class="un" id="gp-dup">—</span></div>
+      <div class="well" id="gp-wvlan"><span class="k">VLAN</span><div id="gp-vlan"></div><span class="un" id="gp-vlan2">—</span></div>
+      <div class="well" id="gp-wdrops"><span class="k">Link drops</span><div id="gp-drops"></div><span class="un">on this jack</span></div>
+      <div class="well" id="gp-wonline"><span class="k">Online in</span><div id="gp-online"></div><span class="un" id="gp-online2">seconds to the gateway</span></div>
+    </div>
+  </section>
+  <div class="note" id="gp-verdict" hidden></div>
+  <div class="grid2">
+    <section class="card"><h2>Switch <span class="spacer"></span><span class="sub" id="gp-heard"></span></h2><dl class="kv" id="gp-sw"></dl></section>
+    <section class="card"><h2>Address and checks <span class="spacer"></span><button class="btn sm ro-ok" id="gp-recheck">Re-check now</button></h2><dl class="kv" id="gp-net"></dl></section>
+  </div>
+  <section class="card"><h2>DHCP and layer 2</h2><dl class="kv" id="gp-l2"></dl></section>
+  <section class="card"><h2>Events <span class="spacer"></span><span class="sub">plugging into a new jack starts over</span></h2><div id="gp-events"></div></section>
+</main>
+</div>
+
+<!-- ================= PORT LOG ================= -->
+<div class="layout view" id="v-log" hidden>
+<aside>
+  <section class="card admin-only">
+    <h2>Save this port</h2>
+    <form class="form" id="gp-flog">
+      <label class="f">Label <span class="sub">The seat or place, e.g. A1 or Row C seat 7. Seat labels (A1, B12, S1-3) can go to GXL.</span><input type="text" id="gp-lab" maxlength="120" spellcheck="false"></label>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit" style="flex:none">Save</button><span id="gp-logmsg"></span></div>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Send to GXL</h2>
+    <form class="form" id="gp-fgxl">
+      <span class="sub">Labelled rows go to the GXL Event Server, which updates those seats' switch and port.</span>
+      <label class="f admin-only">GXL address <input type="text" id="gp-gxurl" spellcheck="false" placeholder="http://10.10.0.10:8000"></label>
+      <label class="f admin-only">Event agent key <input type="password" id="gp-gxkey" autocomplete="off" spellcheck="false"></label>
+      <div class="row admin-only"><button class="btn" type="button" id="gp-gxsave">Save</button><button class="btn primary" type="button" id="gp-gxsend">Send to GXL</button></div>
+      <span id="gp-gxmsg" class="sub"></span>
+    </form>
+  </section>
+</aside>
+<main>
+  <section class="card">
+    <h2>Port log <span class="spacer"></span><a class="btn sm ro-ok" href="/ports.csv">Download CSV</a></h2>
+    <p class="sub" style="margin:0 0 10px">One row per switch port, filled in whenever CDP or LLDP names it. Kept on the router across reboots.</p>
+    <div class="tablewrap"><table><thead><tr><th class="l">When</th><th class="l">Switch</th><th class="l">Port</th><th>VLAN</th><th>Speed</th><th class="l">Label</th><th class="l">Verdict</th></tr></thead><tbody id="gp-log"></tbody></table></div>
+  </section>
+</main>
+</div>
+
+<!-- ================= NETWORK MODE ================= -->
+<div class="layout one view" id="v-mode" hidden>
+<main>
+  <section class="card deck">
+    <h2>Network mode <span class="spacer"></span><span class="lamp" id="gp-mlamp"></span></h2>
+    <div class="wells">
+      <div class="well wide"><span class="k">Mode</span><div class="big-port" id="gp-mode">—</div><span class="un" id="gp-mode2">—</span></div>
+      <div class="well wide"><span class="k">This page</span><div class="big-port" id="gp-maddr" style="font-size:22px">—</div><span class="un">bookmark it for this mode</span></div>
+      <div class="well"><span class="k">Side switch</span><div class="big-port" id="gp-msw" style="font-size:22px">—</div><span class="un" id="gp-msw2">on = AP · off = Router</span></div>
+    </div>
+  </section>
+  <div class="note crit" id="gp-merr" hidden></div>
+  <section class="card admin-only">
+    <h2>Change mode</h2>
+    <div class="row" style="flex-wrap:wrap"><button class="btn" id="gp-to-router" style="flex:none">Router</button><button class="btn" id="gp-to-ap" style="flex:none">Access point</button><span id="gp-mmsg"></span></div>
+    <p class="sub" style="margin:12px 0 0"><b>Router:</b> the WAN port is the uplink, the router hands out 192.168.8.x and this page is at https://192.168.8.1:8088. <b>Access point:</b> the WAN port joins the LAN, the router stops handing out addresses and takes one from the network on WAN; this page moves to that address (the router's screen shows it). The change uses GL.iNet's own Network Mode call and keeps every setting. Wi-Fi drops for about a minute. The side switch and a 3 s hold on the screen's Mode page do the same.</p>
+  </section>
+</main>
+</div>
+
+<!-- ================= WI-FI ================= -->
+<div class="layout one view" id="v-wifi" hidden>
+<main>
+  <section class="card">
+    <h2>Wi-Fi networks <span class="spacer"></span><span class="lamp" id="gp-wlamp"></span></h2>
+    <div class="tablewrap"><table><thead><tr><th class="l">Name</th><th class="l">Band</th><th class="l">Shown</th><th></th></tr></thead><tbody id="gp-wf"></tbody></table></div>
+    <p class="sub" style="margin:12px 0 0">The router's own networks (guest and IoT are left alone). Changes go through GL.iNet's own Wi-Fi settings, so its admin page shows them too. Saving restarts Wi-Fi: phones on it drop and join again. Current passwords are never shown here.</p>
+  </section>
+  <section class="card admin-only" id="gp-wcard" hidden>
+    <h2 id="gp-wtitle">Change</h2>
+    <form class="form" id="gp-wform" autocomplete="off" style="max-width:520px">
+      <label class="f">Wi-Fi name <input type="text" id="gp-wssid" maxlength="32" spellcheck="false"></label>
+      <label class="f">New password <span class="sub">8 to 63 characters. Leave it empty to keep the password.</span><input type="password" id="gp-wkey" maxlength="63" autocomplete="new-password"></label>
+      <label class="chk"><input type="checkbox" id="gp-wshow"><span>Show the password</span></label>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit" style="flex:none">Save</button><button class="btn ghost" type="button" id="gp-wcancel" style="flex:none">Cancel</button><span id="gp-wmsg"></span></div>
+    </form>
+  </section>
+</main>
+</div>
+
+<!-- ================= PING ================= -->
+<div class="layout one view" id="v-ping" hidden>
+<main>
+  <section class="card deck">
+    <h2>Ping <span class="spacer"></span><span class="lamp" id="gp-plamp"></span></h2>
+    <div class="toolbar" style="margin-bottom:12px">
+      <select id="gp-pt" class="ro-ok"><option value="gateway">Gateway</option><option value="dns">DNS server</option><option value="internet">Internet (1.1.1.1)</option><option value="custom">Custom…</option></select>
+      <input type="text" id="gp-ptc" placeholder="address or name" spellcheck="false" hidden><button class="btn" id="gp-ptgo" hidden>Ping</button>
+      <span class="spacer"></span>
+      <span class="keys ro-ok" id="gp-spans"><button class="key ro-ok sel" data-s="30">30 s</button><button class="key ro-ok" data-s="300">5 min</button><button class="key ro-ok" data-s="1800">30 min</button></span>
+    </div>
+    <div class="wells">
+      <div class="well" id="gp-pw-loss"><span class="k">Loss</span><div id="gp-ploss"></div><span class="un" id="gp-ploss2">—</span></div>
+      <div class="well"><span class="k">Average</span><div id="gp-pavg"></div><span class="un">ms</span></div>
+      <div class="well"><span class="k">Jitter</span><div id="gp-pjit"></div><span class="un">ms</span></div>
+      <div class="well"><span class="k">99% under</span><div id="gp-pp99"></div><span class="un">ms</span></div>
+    </div>
+    <div class="legend" id="gp-plg" style="margin-top:14px"></div>
+    <div class="chart" id="gp-pchart" style="height:220px"></div>
+    <div class="wsub" style="white-space:normal">Four pings a second, always running. Red ticks are lost pings.</div>
+  </section>
+  <section class="card"><h2>Events and what ping did around them</h2><div id="gp-pev"></div></section>
+</main>
+</div>
+
+<!-- ================= TICK TEST ================= -->
+<div class="layout view" id="v-tick" hidden>
+<aside>
+  <section class="card admin-only">
+    <h2>Tick test</h2>
+    <form class="form" id="gp-ftick">
+      <label class="f">Reflector <span class="sub">The far end: <code>porkchopcheck --reflector</code> (PorkChopCheck) on the game server, a probe, or another GL Probe with its reflector on (UDP 27777).</span>
+        <input type="text" id="gp-ts" placeholder="host or host:port" spellcheck="false"></label>
+      <div class="seg" role="radiogroup" aria-label="Rate"><label><input type="radio" name="gp-tr" value="64" checked>64 a second</label><label><input type="radio" name="gp-tr" value="128">128 a second</label></div>
+      <label class="f">Seconds <select id="gp-td"><option value="30">30</option><option value="60">60</option><option value="120">120</option></select></label>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit" style="flex:none" id="gp-tgo">Start</button><span id="gp-tmsg"></span></div>
+    </form>
+  </section>
+  <section class="card">
+    <h2>This router's reflector <span class="spacer"></span><span class="lamp" id="gp-rlamp"></span></h2>
+    <p class="sub" style="margin:0 0 10px" id="gp-rinfo"></p>
+    <button class="btn admin-only" id="gp-rgo">Turn on</button>
+    <p class="sub" style="margin:10px 0 0">Answers tick tests on UDP 27777. In Router mode its firewall port opens only while it's on.</p>
+  </section>
+</aside>
+<main>
+  <section class="card deck">
+    <h2>Tick test <span class="spacer"></span><span class="lamp" id="gp-tlamp"></span></h2>
+    <div class="big-port" id="gp-thead" style="font-size:22px;white-space:normal">Point it at a reflector and press Start.</div>
+    <div class="wells" id="gp-twells" style="margin-top:12px"></div>
+    <div class="wsub" id="gp-tdetail" style="white-space:normal;margin-top:10px"></div>
+  </section>
+  <section class="card">
+    <h2>What a player feels</h2>
+    <div class="tablewrap"><table><thead><tr><th class="l">Figure</th><th>Value</th><th class="l">Grade</th></tr></thead><tbody id="gp-trate"></tbody></table></div>
+  </section>
+</main>
+</div>
+
+<!-- ================= LAN SPEED ================= -->
+<div class="layout view" id="v-lan" hidden>
+<aside>
+  <section class="card admin-only">
+    <h2>LAN speed test <span class="spacer"></span><span class="sub">iperf3</span></h2>
+    <form class="form" id="gp-flan">
+      <label class="f">iperf3 server <span class="sub">A GXL Event Server runs one on port 5202; Perf-Deck on 5201.</span><input type="text" id="gp-ss" spellcheck="false" placeholder="IP or name"></label>
+      <label class="f">Port <input type="number" id="gp-sp" min="1" max="65535" placeholder="5201"></label>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit" style="flex:none" id="gp-sgo">Run</button><span id="gp-smsg"></span></div>
+    </form>
+  </section>
+</aside>
+<main>
+  <section class="card deck">
+    <h2>LAN speed <span class="spacer"></span><span class="lamp" id="gp-slamp"></span></h2>
+    <div class="wells">
+      <div class="well wide"><span class="k">Download</span><div id="gp-sdown"></div><span class="un">Mbps · server to router</span></div>
+      <div class="well wide"><span class="k">Upload</span><div id="gp-sup"></div><span class="un">Mbps · router to server</span></div>
+      <div class="well"><span class="k">Retransmits</span><div id="gp-sretr"></div><span class="un">upload</span></div>
+    </div>
+    <div class="wsub" id="gp-sdetail" style="white-space:normal;margin-top:10px"></div>
+  </section>
+</main>
+</div>
+
+<!-- ================= PORT FINDER ================= -->
+<div class="layout one view" id="v-finder" hidden>
+<main>
+  <section class="card deck">
+    <h2>Port finder <span class="spacer"></span><span class="lamp" id="gp-blamp"></span></h2>
+    <div class="wells">
+      <div class="well wide"><span class="k">Flashes</span><div id="gp-bcount"></div><span class="un" id="gp-bstate">off</span></div>
+    </div>
+    <div class="row admin-only" style="margin-top:14px"><button class="btn primary" id="gp-bgo" style="flex:none">Start</button></div>
+    <p class="sub" style="margin:12px 0 0">Bounces the WAN link (down 1.5 s, then up for 2 s once it's back: a flash every 6 to 7 s) so the switch port's LED blinks. Walk the switch and look for it. The router's own network drops while it runs; the tester keeps what it knew about the port.</p>
+  </section>
+</main>
+</div>
+
+<!-- ================= SCREEN ================= -->
+<div class="layout one view" id="v-screen" hidden>
+<main>
+  <section class="card">
+    <h2>The router's screen <span class="spacer"></span><span class="sub">live, every 2 s</span></h2>
+    <img id="gp-scr" alt="The router's screen" style="width:100%;max-width:852px;image-rendering:pixelated;border-radius:8px;background:#000;display:block">
+  </section>
+  <section class="card admin-only">
+    <h2>Who draws it</h2>
+    <div class="row" style="flex-wrap:wrap"><button class="btn" id="gp-scr-probe" style="flex:none">GL Probe</button><button class="btn" id="gp-scr-gl" style="flex:none">GL.iNet</button><span id="gp-scrmsg"></span></div>
+    <p class="sub" style="margin:12px 0 0">GL Probe's pages: Summary, Switch, Port, Layer 2, Ping, Mode. Tap or swipe for the next page; hold 1.5 s to hand the screen to GL.iNet's own program (hold 3 s on the Mode page to change the network mode). The tester keeps running with either.</p>
+  </section>
+</main>
+</div>
+
+<!-- ================= HTTPS ================= -->
+<div class="layout view" id="v-https" hidden>
+<aside>
+  <section class="card admin-only">
+    <h2>Make a new certificate</h2>
+    <form class="form" id="gp-ftls">
+      <label class="f">Names and addresses <span class="sub">Comma separated. Self-signed, good for 10 years. Browsers warn once for each new one.</span><input type="text" id="gp-tlsnames" spellcheck="false"></label>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit" style="flex:none">Make certificate</button></div>
+    </form>
+  </section>
+  <section class="card admin-only">
+    <h2>Use your own</h2>
+    <form class="form" id="gp-fup">
+      <span class="sub">For example signed by your own CA. PEM: the certificate (its chain after it, if any) and its private key without a password.</span>
+      <textarea id="gp-tlscert" rows="5" placeholder="-----BEGIN CERTIFICATE-----" spellcheck="false"></textarea>
+      <textarea id="gp-tlskey" rows="4" placeholder="-----BEGIN PRIVATE KEY-----" spellcheck="false"></textarea>
+      <label class="f">or load the files <input type="file" id="gp-tlsfile" multiple accept=".pem,.crt,.cer,.key,.txt"></label>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit" style="flex:none">Upload</button></div>
+    </form>
+  </section>
+</aside>
+<main>
+  <section class="card">
+    <h2>HTTPS certificate <span class="spacer"></span><a class="btn sm ro-ok" href="/cert.pem">Download</a></h2>
+    <dl class="kv" id="gp-tlsinfo"></dl>
+    <div class="note" id="gp-tlswarn" hidden style="margin-top:12px"></div>
+    <p class="sub" style="margin:12px 0 0">Install the downloaded certificate on a phone or PC to trust this router and stop the browser warning. Plain http:// on port 8088 is sent to https:// by itself.</p>
+    <span id="gp-tlsmsg"></span>
+  </section>
+</main>
+</div>
+
+<!-- ================= USERS ================= -->
+<div class="layout view" id="v-users" hidden>
+<aside>
+  <section class="card admin-only">
+    <h2>Add someone</h2>
+    <form class="form" id="gp-fuser">
+      <label class="f">User name <input type="text" id="gp-unew" autocapitalize="none" spellcheck="false"></label>
+      <label class="f">Password <input type="password" id="gp-upw" autocomplete="new-password" placeholder="8 characters or more"></label>
+      <div class="seg" role="radiogroup" aria-label="Role"><label><input type="radio" name="gp-urole" value="viewer" checked>Viewer</label><label><input type="radio" name="gp-urole" value="admin">Admin</label></div>
+      <div class="row" style="align-items:center"><button class="btn primary" type="submit" style="flex:none">Add</button></div>
+    </form>
+  </section>
+  <section class="card">
+    <h2>My password</h2>
+    <form class="form ro-ok" id="gp-fmine">
+      <label class="f">Current password <input type="password" id="gp-mycur" autocomplete="current-password" class="ro-ok"></label>
+      <label class="f">New password <input type="password" id="gp-mynew" autocomplete="new-password" class="ro-ok"></label>
+      <div class="row" style="align-items:center"><button class="btn primary ro-ok" type="submit" style="flex:none">Change</button><span id="gp-mymsg"></span></div>
+    </form>
+  </section>
+</aside>
+<main>
+  <section class="card admin-only">
+    <h2>Users</h2>
+    <div class="tablewrap"><table><thead><tr><th class="l">User</th><th class="l">Role</th><th class="l">Last login</th><th></th></tr></thead><tbody id="gp-users"></tbody></table></div>
+    <span id="gp-umsg"></span>
+    <p class="sub" style="margin:12px 0 0">Admins change things; viewers look and can re-check the port. Locked out? Over SSH: <code>PYTHONPATH=/usr/share/gl-probe python3 -m gl_probe.auth passwd NAME</code></p>
+  </section>
+  <div class="note" id="gp-unote" hidden>You're a viewer: only admins see the user list.</div>
+</main>
+</div>
+
 <div class="view" id="v-mtr" hidden style="padding:18px 20px 40px;max-width:1640px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
   <section class="card">
     <h2>Traceroute <span class="spacer"></span><span class="sub">every hop, probed once a second, like mtr</span></h2>
@@ -1388,81 +1702,141 @@ function gNeedle({ title, value, max, readout, unit, warn, crit, color = 'var(--
 const pct = n => Math.max(0, Math.min(1, (n ?? 0) / 100));
 const gauge = (label, value, text, level) => { const color = LEVEL_COLOR[level || 'ok']; return `<div class="gauge"><span class="k">${label}</span>${gLeds(value, 20, { thin: true, color })}<span class="gv" style="color:${color}">${esc(text)}</span></div>`; };
 
-// ---------- the router's glue: login, views, state ----------
-let S = null, ME = null, timer = 0;
+// ---------- GL Probe's glue: login, views, state ----------
+let S = null, D = null, ME = null, timer = 0;
 const isAdmin = () => !!ME && ME.role === 'admin';
-const showGate = () => { location.href = '/'; };   // the phone page has the login
 const PAGES = {};
-const VIEWS = ['mtr', 'hosts', 'mdns', 'mcast', 'cache', 'speed', 'wake', 'stats', 'ts'];
-let view = 'stats';
+const VIEWS = ['port', 'log', 'mode', 'wifi', 'ping', 'tick', 'lan', 'finder', 'screen', 'https', 'users', 'mtr', 'hosts', 'mdns', 'mcast', 'cache', 'speed', 'wake', 'stats', 'ts'];
+let view = 'port';
 lsSet('pd-speed-src', 'inet');
 function showView() {
   const v = location.hash.slice(1);
-  view = VIEWS.includes(v) ? v : 'stats';
+  view = VIEWS.includes(v) ? v : 'port';
   for (const n of VIEWS) $('#v-' + n).hidden = n !== view;
   for (const a of document.querySelectorAll('.side .items a')) a.classList.toggle('on', a.dataset.view === view);
   for (const m of document.querySelectorAll('.side .mod')) m.classList.toggle('has-on', !!m.querySelector('a.on'));
   navOpen(false);
+  if (!ME) return;
   if (view === 'ts') tsRefresh();
-  if (view === 'wake') poll();
-  if (PAGES[view] && ME) PAGES[view].show();
+  if (view === 'wake') renderWake();
+  if (PAGES[view]) PAGES[view].show();
+  if (window.GLP) GLP.show(view);
+  if (S && window.GLP) GLP.render(S);
 }
 addEventListener('hashchange', showView);
 function navOpen(open) { document.body.classList.toggle('navopen', open); $('#b-nav').setAttribute('aria-expanded', String(open)); }
 $('#b-nav').addEventListener('click', () => navOpen(!document.body.classList.contains('navopen')));
 $('#scrim').addEventListener('click', () => navOpen(false));
+addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('navopen')) navOpen(false); });
 let navClosed;
-try { navClosed = new Set(JSON.parse(lsGet('pcc-deck-nav-closed', '[]'))); } catch { navClosed = new Set(); }
+try { navClosed = new Set(JSON.parse(lsGet('glp-nav-closed', '[]'))); } catch { navClosed = new Set(); }
 for (const m of document.querySelectorAll('.side .mod')) {
   const btn = m.querySelector('button'), id = m.dataset.mod;
   const set = closed => { m.classList.toggle('closed', closed); btn.setAttribute('aria-expanded', String(!closed)); };
   set(navClosed.has(id));
-  btn.addEventListener('click', () => { const c = !m.classList.contains('closed'); set(c); c ? navClosed.add(id) : navClosed.delete(id); lsSet('pcc-deck-nav-closed', JSON.stringify([...navClosed])); });
+  btn.addEventListener('click', () => { const c = !m.classList.contains('closed'); set(c); c ? navClosed.add(id) : navClosed.delete(id); lsSet('glp-nav-closed', JSON.stringify([...navClosed])); });
 }
 { const hdr = $('header.top'); new ResizeObserver(() => document.documentElement.style.setProperty('--hdr', hdr.offsetHeight + 'px')).observe(hdr); }
 function navLamps() {
   for (const m of document.querySelectorAll('.side .mod')) {
     let worst = 0;
     for (const a of m.querySelectorAll('.items a')) {
+      const b = a.querySelector('.badge'), alert = !!b && !b.hidden && !!b.textContent.trim() && b.textContent.trim() !== '0';
+      a.classList.toggle('alert', alert);
       const d = a.querySelector('.dot').classList;
-      worst = Math.max(worst, d.contains('err') ? 3 : d.contains('warn') ? 2 : d.contains('on') ? 1 : 0);
+      worst = Math.max(worst, alert || d.contains('err') ? 3 : d.contains('warn') ? 2 : d.contains('on') ? 1 : 0);
     }
     m.querySelector('[data-lamp]').className = 'dot ' + ['', 'on', 'warn', 'err'][worst];
   }
 }
+const lampOf = c => !c ? '' : c.ok ? 'on' : 'err';
+function renderJack(s) {
+  const sw = s.switch, lk = s.link, w = s.wan || {}, ck = s.checks || {}, m = s.netmode || {};
+  $('#sj-port').textContent = sw.heard ? GLP.short(sw.port) : '—';
+  $('.jack').classList.toggle('off', !sw.heard);
+  $('#sj-sub').textContent = sw.heard ? [sw.name || 'unknown switch', sw.vlan != null ? 'VLAN ' + sw.vlan : '', lk.up && lk.speed ? lk.speed + ' Mbps' : ''].filter(Boolean).join(' · ')
+    : lk.up ? 'Waiting for CDP / LLDP' : 'Not plugged in';
+  $('#sj-link').className = 'dot ' + (lk.up ? 'on' : 'err');
+  $('#sj-dhcp').className = 'dot ' + (!lk.up ? '' : w.address ? 'on' : 'warn');
+  $('#sj-dns').className = 'dot ' + (lk.up ? lampOf(ck.dns) : '');
+  $('#sj-net').className = 'dot ' + (lk.up ? lampOf(ck.internet) : '');
+  $('#sj-pd').textContent = (m.state === 'changing' ? 'Changing to ' : '') + ({ router: 'Router mode', ap: 'Access point mode' }[m.state === 'changing' ? m.want : m.mode] || '');
+  $('#t-port').className = 'dot ' + ({ good: 'on', warn: 'warn', bad: 'err' }[s.verdict] || '');
+  $('#t-mode').className = 'dot ' + (m.state === 'changing' ? 'live' : m.state === 'error' ? 'err' : 'on');
+  $('#h-dot').className = 'dot ' + (lk.up ? 'on' : 'err');
+  $('#h-name').textContent = `${s.host || 'GL Probe'} · ${w.address || 'no address'} · ${m.mode === 'ap' ? 'AP' : 'Router'}`;
+}
 async function poll() {
   clearTimeout(timer);
   try {
-    const r = await fetch('/api/deck/state', { cache: 'no-store' });
+    const r = await fetch('/api/state', { cache: 'no-store' });
     if (r.status === 401) return showGate();
-    S = await r.json();
+    S = { ...(await r.json()), wol: D && D.wol, watch: null };
     $('#offline').hidden = true;
-    $('#h-dot').className = 'dot ' + (S.link && S.link.up ? 'on' : 'err');
-    $('#h-name').textContent = `${S.name} · ${S.ip || 'no address'} · ${S.mode === 'ap' ? 'Access point' : 'Router'}`;
-    const t = S.temp;
-    $('#h-temp').innerHTML = `<span class="dot ${t == null ? '' : t >= 85 ? 'err' : t >= 75 ? 'warn' : 'on'}"></span>${t == null ? '—' : t.toFixed(0)} °C`;
-    $('#sj-ver').textContent = `${S.name} · Deck from Probe Deck 54f3e90`;
-    for (const [k, a] of Object.entries(S.apps || {})) {
-      const d = $('#t-' + k), b = $('#tb-' + k);
-      if (d) d.className = 'dot ' + ((a && a.dot) || '');
-      if (b) { b.hidden = !(a && a.badge); b.textContent = (a && a.badge) || ''; }
-    }
-    navLamps();
-    if (view === 'wake') renderWake();
+    renderJack(S);
+    GLP.render(S);
+    if (view === 'wake') { await deckOnce(); renderWake(); }
   } catch { $('#offline').hidden = false; }
-  timer = setTimeout(poll, view === 'wake' ? 2000 : 5000);
+  timer = setTimeout(poll, 2000);
 }
+async function deckOnce() {
+  if (!ME) return;
+  try {
+      const r = await fetch('/api/deck/state', { cache: 'no-store' });
+      if (r.ok) {
+        D = await r.json();
+        const t = D.temp;
+        $('#h-temp').innerHTML = `<span class="dot ${t == null ? '' : t >= 85 ? 'err' : t >= 75 ? 'warn' : 'on'}"></span>${t == null ? '—' : t.toFixed(0)} °C`;
+        $('#sj-ver').textContent = `GL Probe · ${D.version || ''}`;
+        for (const [k, a] of Object.entries(D.apps || {})) {
+          const d = $('#t-' + k), b = $('#tb-' + k);
+          if (d) d.className = 'dot ' + ((a && a.dot) || '');
+          if (b) { b.hidden = !(a && a.badge); b.textContent = (a && a.badge) || ''; }
+        }
+        if (S) S.wol = D.wol;
+        navLamps();
+      }
+    } catch {}
+}
+async function pollDeck() { await deckOnce(); setTimeout(pollDeck, 5000); }
+
+// ---------- login ----------
+function showGate(a) {
+  ME = null; clearTimeout(timer);
+  document.body.classList.add('gated'); $('#gate').hidden = false;
+  if (!a) return fetch('/api/auth/me', { cache: 'no-store' }).then(r => r.json()).then(showGate).catch(() => setTimeout(showGate, 3000));
+  $('#g-err').hidden = true;
+  $('#f-setup').hidden = !a.setup; $('#f-signin').hidden = a.setup;
+  $('#g-title').textContent = a.setup ? 'FIRST SETUP' : 'LOG IN';
+  $('#g-sub').textContent = a.setup ? 'No users yet. Create the admin account: it can do everything, and add other users later.' : '';
+  setTimeout(() => (a.setup ? $('#s1-owner') : $('#g-name')).focus(), 50);
+}
+const gateErr = m => { $('#g-err').textContent = m; $('#g-err').hidden = false; };
+$('#f-signin').onsubmit = async e => {
+  e.preventDefault();
+  try { await api('/api/auth/login', { name: $('#g-name').value, password: $('#g-pw').value }); $('#g-pw').value = ''; boot(); }
+  catch (err) { gateErr(err.message); $('#g-pw').select(); }
+};
+$('#f-setup').onsubmit = async e => {
+  e.preventDefault();
+  if ($('#s1-pw').value !== $('#s1-pw2').value) return gateErr("The two passwords don't match");
+  try { await api('/api/auth/setup', { name: $('#s1-name').value, password: $('#s1-pw').value, owner: $('#s1-owner').value }); $('#s1-owner').value = ''; boot(); }
+  catch (err) { gateErr(err.message); }
+};
+$('#b-logout').onclick = async () => { await api('/api/auth/logout').catch(() => {}); showGate(); };
+let started = false;
 async function boot() {
   let a;
-  try { a = await (await fetch('/api/auth/me', { cache: 'no-store' })).json(); } catch { return setTimeout(boot, 3000); }
-  if (!a.user) return showGate();
+  try { a = await (await fetch('/api/auth/me', { cache: 'no-store' })).json(); }
+  catch { $('#g-sub').textContent = 'Can’t reach the router. Retrying…'; return setTimeout(boot, 3000); }
+  if (a.setup || !a.user) return showGate(a);
   ME = a.user;
   document.body.classList.toggle('ro', ME.role !== 'admin');
   $('#h-uname').textContent = ME.name; $('#h-role').textContent = ME.role; $('#h-role').className = 'role ' + ME.role;
-  document.body.classList.remove('gated');
+  document.body.classList.remove('gated'); $('#gate').hidden = true;
   showView(); poll();
+  if (!started) { started = true; pollDeck(); }
 }
-$('#b-logout').onclick = async () => { await api('/api/auth/logout').catch(() => {}); showGate(); };
 
 // ---------- Wake (Probe Deck's) ----------
 // ---------- wake ----------
@@ -1600,7 +1974,7 @@ function renderTS() {
   $('#ts-health').hidden = !hl; $('#ts-health').innerHTML = hl;
   setHTML('#ts-kv', run ? [['MagicDNS name', t.dns], ['Addresses', (t.ips || []).join(', ')], ['Tailnet', t.tailnet], ['Open this page', t.dns ? `https://${t.dns}/` : null],
     ['Subnets shared', (pr.routes || []).join(', ') || 'none'], ['Exit node', pr.exit_node ? 'offered' : 'no'], ['Tailscale SSH', pr.run_ssh ? 'on' : 'off'],
-    ['Networking', 'userspace (PorkChopCheck’s own Tailscale)']].map(([k, v]) => `<div><dt>${k}</dt><dd title="${esc(v || '')}">${esc(v || '—')}</dd></div>`).join('')
+    ['Networking', 'userspace (GL Probe’s own Tailscale)']].map(([k, v]) => `<div><dt>${k}</dt><dd title="${esc(v || '')}">${esc(v || '—')}</dd></div>`).join('')
     : '<div><dd class="sub">Not connected.</dd></div>');
   $('#tsx-cert').hidden = !run;
   const host = u => { try { return new URL(u).host; } catch { return u; } };
@@ -1833,13 +2207,14 @@ function tsmDraw(ts) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden && view === 'ts' && !TSM.raf) TSM.raf = requestAnimationFrame(tsmDraw); });
 
 
-boot();
 </script>
-<script src="/deck/web/mtr.js"></script>
-<script src="/deck/web/hosts.js"></script>
-<script src="/deck/web/mdns.js"></script>
-<script src="/deck/web/mcast.js"></script>
-<script src="/deck/web/cache.js"></script>
-<script src="/deck/web/speed.js"></script>
-<script src="/deck/web/stats.js"></script>
+<script src="/web/glp.js"></script>
+<script src="/web/mtr.js"></script>
+<script src="/web/hosts.js"></script>
+<script src="/web/mdns.js"></script>
+<script src="/web/mcast.js"></script>
+<script src="/web/cache.js"></script>
+<script src="/web/speed.js"></script>
+<script src="/web/stats.js"></script>
+<script>boot();</script>
 </body></html>

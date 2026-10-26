@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# PorkChopCheck router service: tests the port the WAN is plugged into. Installed by router/install.sh.
+# GL Probe: tests the port the WAN is plugged into, draws the screen and serves the page. Installed by install.sh.
 # Starts after GL.iNet's screen program (START=80); when the screen is set to ours, it stops that program.
 
 START=99
@@ -8,8 +8,8 @@ USE_PROCD=1
 
 start_service() {
 	procd_open_instance
-	procd_set_param command /usr/bin/python3 -m pcc_router.service
-	procd_set_param env PYTHONPATH=/usr/share/pcc-router
+	procd_set_param command /usr/bin/python3 -m gl_probe.service
+	procd_set_param env PYTHONPATH=/usr/share/gl-probe
 	procd_set_param respawn 3600 5 0
 	procd_set_param stdout 1
 	procd_set_param stderr 1

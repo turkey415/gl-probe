@@ -248,7 +248,7 @@ def _badge(c, m, right):
 
 
 def phone_address(s):
-    """Where the phone page is: 192.168.8.1 in Router mode, the address the network gave in AP mode."""
+    """Where GL Probe's page is: 192.168.8.1 in Router mode, the address the network gave in AP mode."""
     m = s.get("netmode") or {}
     ip = (s.get("wan") or {}).get("address") if m.get("mode") == "ap" else m.get("lan_ip") or "192.168.8.1"
     return f"{ip}:8088" if ip else "waiting for an address"

@@ -2,16 +2,16 @@
 -- Switches the router between Router and Access point mode with GL.iNet's own call (the one its
 -- Network Mode page makes), so every setting is kept. It goes through `ubus call gl-session call`,
 -- which runs the call inside GL.iNet's web server: set_mode needs that server's nginx Lua tools.
--- Run by the side switch (/etc/gl-switch.d/netmode.sh), the screen's Mode page and the phone page.
+-- Run by the side switch (/etc/gl-switch.d/netmode.sh), the screen's Mode page and GL Probe's page.
 --
 --   lua netmode.lua get            prints router, ap, ...
---   lua netmode.lua set router|ap  changes mode; progress goes to /tmp/pcc-netmode.json
+--   lua netmode.lua set router|ap  changes mode; progress goes to /tmp/gl-probe-netmode.json
 --
--- Callers wrap it in `flock -n /var/lock/pcc-netmode.lock` so two changes never overlap.
+-- Callers wrap it in `flock -n /var/lock/gl-probe-netmode.lock` so two changes never overlap.
 
 local cjson = require "cjson"
 
-local STATE = "/tmp/pcc-netmode.json"
+local STATE = "/tmp/gl-probe-netmode.json"
 local WAN = "eth0"
 -- GL.iNet's error codes for set_mode, as its page explains them
 local ERRORS = {

@@ -1,12 +1,12 @@
-"""Logins for the phone page: user accounts (admin or viewer), from Probe Deck's auth.py.
+"""Logins for GL Probe's page: user accounts (admin or viewer), from Probe Deck's auth.py.
 
 The first visit creates the first admin, and proves it's the router's owner with the router's own
 admin password (the one for GL.iNet's admin page, root's in /etc/shadow). Users are kept in
-/etc/pcc-router/users.json and logins in /etc/pcc-router/sessions.json, both root-only.
+/etc/gl-probe/users.json and logins in /etc/gl-probe/sessions.json, both root-only.
 
 Admin: everything. Viewer: can look, and re-check the port, but not change anything.
 
-Locked out? Over SSH:  python3 -m pcc_router.auth passwd|add|del|list  (PYTHONPATH=/usr/share/pcc-router)
+Locked out? Over SSH:  python3 -m gl_probe.auth passwd|add|del|list  (PYTHONPATH=/usr/share/gl-probe)
 """
 import hashlib
 import hmac
@@ -21,7 +21,7 @@ import warnings
 from http.cookies import SimpleCookie
 from pathlib import Path
 
-COOKIE = "pcc_session"
+COOKIE = "glp_session"
 SHADOW = "/etc/shadow"
 SESSION_SECS = 30 * 86400   # a login lasts a month
 ROLES = ("admin", "viewer")
@@ -302,8 +302,8 @@ def cli():
     """Manage users over SSH, e.g. when locked out. The running page picks the change up by itself."""
     import argparse
     import getpass
-    ap = argparse.ArgumentParser(description="PorkChopCheck router users")
-    ap.add_argument("--conf-dir", default="/etc/pcc-router")
+    ap = argparse.ArgumentParser(description="GL Probe users")
+    ap.add_argument("--conf-dir", default="/etc/gl-probe")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list")
     for c in ("passwd", "add", "del"):

@@ -1,12 +1,13 @@
-"""The Deck: Probe Deck's tools on the router, at https://<router>:8088/deck.
+"""Probe Deck's tools in GL Probe: traceroute, host scan, mDNS, multicast, LAN cache, internet speed,
+Wake, system stats and Tailscale.
 
 The backends in deck/ are Probe Deck's own (appbase, mtr, wire, hosts, cache, inet, stats, wake,
 tailscale), copied unchanged. They expect a "probe" object; Probe below is that, built from what the
-router's tester already knows. The page (deck/index.html) is built by router/tools/build_deck.py.
+router's tester already knows. Their pages are in www/index.html, built by tools/build_page.py.
 
-The Deck's tools start the first time someone opens it, so a router nobody looks at does no extra
-work. Settings and history live in /etc/pcc-router/deck/ (small files, written only on changes).
-Tailscale is PorkChopCheck's own tailscaled on the router (service pcc-tailscale), see RouterTailscale.
+The tools start the first time one of their pages is opened, so a router nobody looks at does no
+extra work. Settings and history live in /etc/gl-probe/deck/ (small files, written only on changes).
+Tailscale is GL Probe's own tailscaled on the router (service gl-probe-tailscale), see RouterTailscale.
 """
 
 import ipaddress
@@ -36,7 +37,6 @@ import wire as wire_mod  # noqa: E402
 OUI_URL = "https://standards-oui.ieee.org/oui/oui.csv"
 APPS = [wire_mod.Wire, wire_mod.Mdns, wire_mod.Multicast, mtr_mod.Mtr, hosts_mod.HostScan, cache_mod.LanCache,
         inet_mod.Inet, stats_mod.Stats]  # fmt: skip
-FILES = {"index.html": "text/html; charset=utf-8", "vendor/us-map.json": "application/json"}
 
 
 class Watch:
@@ -108,17 +108,17 @@ class Probe:
             appbase.save_json(self.conf_file, self.conf, private=True)
 
 
-TS_NAME = "pcc-tailscale"
-TS_SOCK = "/var/run/pcc-tailscale/tailscaled.sock"
+TS_NAME = "gl-probe-tailscale"
+TS_SOCK = "/var/run/gl-probe-tailscale/tailscaled.sock"
 TS_INIT = "/etc/init.d/" + TS_NAME
 
 
 class RouterTailscale(ts_mod.Tailscale):
-    """Probe Deck's Tailscale page on PorkChopCheck's own Tailscale (service pcc-tailscale).
+    """Probe Deck's Tailscale page on GL Probe's own Tailscale (service gl-probe-tailscale).
 
     GL.iNet's Tailscale only runs in Router mode: its helper stops it on every network change in
-    Access point mode. So PorkChopCheck runs the router's tailscaled itself, with its own state
-    (/etc/pcc-router/tailscale), socket and port, in userspace networking (no tun device, nothing GL.iNet
+    Access point mode. So GL Probe runs the router's tailscaled itself, with its own state
+    (/etc/gl-probe/tailscale), socket and port, in userspace networking (no tun device, nothing GL.iNet
     cleans up). It works in both modes. Leave GL.iNet's own Tailscale off, or the router joins twice.
     """
 
@@ -175,6 +175,7 @@ class Deck:
         self.started = False
         self.lock = threading.Lock()
         self.ts = None
+        self.ts_at, self.ts_dot = 0, None
         hosts_mod.IEEE = os.path.join(conf_dir, "ieee-data")
 
     # ---------- starting on first use ----------
@@ -192,7 +193,7 @@ class Deck:
                     if not os.path.exists(app.conf_file):  # on a router: scan when asked, not every few minutes
                         app.conf["every"] = 0
                 p.apps[app.name] = app
-            except Exception as e:  # noqa: BLE001 - one broken tool shouldn't take the Deck down
+            except Exception as e:  # noqa: BLE001 - one broken tool shouldn't take the rest down
                 print(f"deck: {cls.__name__} didn't start: {e}", flush=True)
         for app in p.apps.values():
             threading.Thread(target=app.start, daemon=True, name="deck-" + app.name).start()
@@ -236,7 +237,7 @@ class Deck:
 
     # ---------- the page's requests ----------
     def state(self, user):
-        self.start()
+        """The sidebar lights and Wake's list. The tools themselves start when one of their pages opens."""
         p = self.p
         apps = {}
         for k, a in p.apps.items():
@@ -244,17 +245,22 @@ class Deck:
                 apps[k] = a.status()
             except Exception:  # noqa: BLE001
                 apps[k] = None
-        try:
-            ts = self.tailscale().snapshot().get("state")
-            apps["ts"] = {"dot": "on" if ts == "Running" else "warn" if ts == "NeedsLogin" else ""}
-        except Exception:  # noqa: BLE001
-            pass
+        if time.time() - self.ts_at > 30:  # Tailscale's light: asked every 30 s, not every poll
+            self.ts_at = time.time()
+            try:
+                ts = self.tailscale().snapshot().get("state")
+                self.ts_dot = {"dot": "on" if ts == "Running" else "warn" if ts == "NeedsLogin" else ""}
+            except Exception:  # noqa: BLE001
+                self.ts_dot = None
+        if self.ts_dot:
+            apps["ts"] = self.ts_dot
         try:
             temp = round(int(open("/sys/class/thermal/thermal_zone0/temp").read()) / 1000, 1)
         except (OSError, ValueError):
             temp = None
-        return {"name": socket.gethostname(), "ip": p.net.get("ip"), "mode": self.s.netmode.get("mode"), "link": p.link,
-                "temp": temp, "apps": apps, "wol": p.wake.snapshot() if p.wake else None, "watch": None, "me": user}  # fmt: skip
+        from . import __version__
+        return {"version": __version__, "name": socket.gethostname(), "ip": p.net.get("ip"), "mode": self.s.netmode.get("mode"), "link": p.link,
+                "temp": temp, "apps": apps, "wol": p.wake.snapshot() if p.wake else {"hosts": [], "job": None, "stagger": p.conf.get("wol_stagger", 2), "seen": []}, "watch": None, "me": user}  # fmt: skip
 
     def app_get(self, name, sub, arg, query, user):
         self.start()
@@ -299,17 +305,3 @@ class Deck:
                 raise ValueError("Stagger is 0-60 s")
             self.p.save_conf({"wol_stagger": v})
         return {}
-
-    def file(self, rel):
-        """deck/index.html, deck/web/<page>.js, deck/vendor/us-map.json (only these)."""
-        if rel in FILES:
-            kind = FILES[rel]
-        elif re.fullmatch(r"web/[a-z]+\.js", rel):
-            kind = "text/javascript; charset=utf-8"
-        else:
-            return None, None
-        try:
-            with open(os.path.join(DECK, rel), "rb") as f:
-                return f.read(), kind
-        except OSError:
-            return None, None

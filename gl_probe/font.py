@@ -1,4 +1,4 @@
-"""Bitmap fonts for the router screen, made by router/tools/make_font.py from Noto Sans Mono
+"""Bitmap fonts for the router screen, made by tools/make_font.py from Noto Sans Mono
 (SIL Open Font License). Each glyph is rows of bits, packed, base64; all glyphs in a size
 share one width (monospace)."""
 

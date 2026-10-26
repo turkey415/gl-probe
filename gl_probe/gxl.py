@@ -2,7 +2,7 @@
 
 GXL's /agent/survey takes {"records": [{label, switch, port, vlan, speed, level, why}], "source"} with
 the event's agent key, and updates the seats it already has (label = the seat, e.g. "A1"). The key
-is kept in /etc/pcc-router/config.json (root-only) and never sent to the page.
+is kept in /etc/gl-probe/config.json (root-only) and never sent to the page.
 """
 
 import json
@@ -63,7 +63,7 @@ class Gxl:
         records = self.records()
         if not records:
             raise ValueError("No labelled ports yet: save some in the port log with the seat as the label (e.g. A1)")
-        body = json.dumps({"records": records, "source": "PorkChopCheck router"}).encode()
+        body = json.dumps({"records": records, "source": "GL Probe"}).encode()
         req = urllib.request.Request(f"{url}/agent/survey", data=body, method="POST",
                                      headers={"Content-Type": "application/json", "Authorization": f"Agent {key}"})  # fmt: skip
         try:

@@ -1,5 +1,5 @@
 #!/bin/sh
-# PorkChopCheck: the side switch picks the network mode. Installed as /etc/gl-switch.d/netmode.sh,
+# GL Probe: the side switch picks the network mode. Installed as /etc/gl-switch.d/netmode.sh,
 # so GL.iNet's switch handler (/etc/rc.button/switch) runs it with "on" or "off".
 #   on  = Access point
 #   off = Router
@@ -8,5 +8,5 @@
 
 [ -n "$SERVICE" ] && exit 0
 [ "$1" = "on" ] && mode=ap || mode=router
-logger -t pcc-router "side switch $1: $mode mode"
-exec flock -n /var/lock/pcc-netmode.lock lua /usr/share/pcc-router/netmode.lua set "$mode"
+logger -t gl-probe "side switch $1: $mode mode"
+exec flock -n /var/lock/gl-probe-netmode.lock lua /usr/share/gl-probe/netmode.lua set "$mode"

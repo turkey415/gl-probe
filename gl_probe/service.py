@@ -1,7 +1,7 @@
-"""The PorkChopCheck router service: tests the port the WAN is plugged into, shows it on the router's
-screen and on a phone page, and lets the screen go back to GL.iNet's own screen program.
+"""The GL Probe service: tests the port the WAN is plugged into, shows it on the router's
+screen and on its page, and lets the screen go back to GL.iNet's own screen program.
 
-Runs under procd (router/pcc-router.init). Threads:
+Runs under procd (gl-probe.init). Threads:
 - link: the WAN's carrier, speed and duplex from /sys, and what each end offered from ethtool
 - listen: every frame on the WAN, decoded by pc_net.classify (CDP, LLDP, STP, DHCP, 802.1X...)
 - wan: the router's own DHCP client's status (ubus), and the gateway's MAC
@@ -10,9 +10,9 @@ Runs under procd (router/pcc-router.init). Threads:
 - the screen and its touch input, when the screen is ours
 - ping, four a second, to the chosen target, for the event timeline (tools.py)
 - the port log, filled in whenever CDP/LLDP names a port
-- the phone page (web.py), which also starts the tick test, reflector, speed test and port finder
+- the page (web.py), which also starts the tick test, reflector, speed test and port finder
 - the network mode (Router or Access point) and the side switch's position; netmode.lua changes it
-- Wi-Fi names and passwords from the phone page (wifi.py), through GL.iNet's own calls
+- Wi-Fi names and passwords from the page (wifi.py), through GL.iNet's own calls
 """
 
 import json
@@ -29,13 +29,13 @@ from . import auth, deckhost, gxl, tls, tools, web, wifi
 from .screen import PAGES, Display, Touch
 from .tester import Tester
 
-CONFIG = os.environ.get("PCC_CONFIG", "/etc/pcc-router/config.json")
+CONFIG = os.environ.get("GLP_CONFIG", "/etc/gl-probe/config.json")
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NETMODE_STATE = "/tmp/pcc-netmode.json"
-NETMODE_LOCK = "/var/lock/pcc-netmode.lock"
+NETMODE_STATE = "/tmp/gl-probe-netmode.json"
+NETMODE_LOCK = "/var/lock/gl-probe-netmode.lock"
 MODE_NAMES = {"router": "Router", "ap": "Access point"}
 CHANGE_SECS = 120  # a change that says "changing" for longer than this has died
-DEFAULTS = {"iface": "eth0", "wan": "wan", "screen": "pcc", "port": 8088,
+DEFAULTS = {"iface": "eth0", "wan": "wan", "screen": "probe", "port": 8088,
             "ping_target": "gateway", "tick_server": "", "iperf_server": "", "iperf_port": 5201}
 
 
@@ -58,6 +58,8 @@ class Service:
     def __init__(self, config_path=CONFIG):
         self.config_path = config_path
         self.config = {**DEFAULTS, **self._load()}
+        if self.config.get("screen") == "pcc":  # its name before GL Probe
+            self.config["screen"] = "probe"
         self.iface = self.config["iface"]
         self.tester = Tester(self.iface)
         self.display = Display()
@@ -193,15 +195,15 @@ class Service:
 
     # ---------- whose screen ----------
     def set_screen(self, mode):
-        """"pcc" (ours) or "gl" (GL.iNet's screen program). Remembered across reboots."""
-        if mode not in ("pcc", "gl"):
+        """"probe" (ours) or "gl" (GL.iNet's screen program). Remembered across reboots."""
+        if mode not in ("probe", "gl"):
             raise ValueError(mode)
         self.config["screen"] = mode
         self.save()
         self.apply_screen()
 
     def apply_screen(self):
-        if self.config["screen"] == "pcc":
+        if self.config["screen"] == "probe":
             run(["/etc/init.d/gl_screen", "stop"])
             self.display.light(True)
         else:
@@ -211,11 +213,11 @@ class Service:
     def screen_loop(self):
         while not self.stop.is_set():
             self.screen_changed.clear()
-            if self.config["screen"] != "pcc":
+            if self.config["screen"] != "probe":
                 self.screen_changed.wait(5)
                 continue
             last = 0
-            while self.config["screen"] == "pcc" and not self.stop.is_set() and not self.screen_changed.is_set():
+            while self.config["screen"] == "probe" and not self.stop.is_set() and not self.screen_changed.is_set():
                 if time.monotonic() - last >= 1:
                     if not self.display.lit():  # something blanked it: light it again
                         self.display.light(True)
@@ -233,10 +235,10 @@ class Service:
     def touch_loop(self):
         touch = Touch()
         while not self.stop.is_set():
-            if self.config["screen"] != "pcc":
+            if self.config["screen"] != "probe":
                 time.sleep(1)
                 continue
-            for press in touch.presses(lambda: self.stop.is_set() or self.config["screen"] != "pcc"):
+            for press in touch.presses(lambda: self.stop.is_set() or self.config["screen"] != "probe"):
                 on_mode = PAGES[self.page % len(PAGES)] == "mode"
                 if press in ("tap", "next", "prev"):
                     self.page = (self.page + (-1 if press == "prev" else 1)) % len(PAGES)
@@ -362,7 +364,7 @@ class Service:
         self.apply_screen()
         self.reflector.tidy()
         self.netmode = self.read_netmode()
-        self.tls.ensure()  # HTTPS on the phone page's port; first start makes the certificate
+        self.tls.ensure()  # HTTPS on the page's port; first start makes the certificate
         threading.Thread(target=self.tls.cover_addresses, daemon=True, name="tls").start()
         for target in (self.link_loop, self.listen_loop, self.wan_loop, self.checks_loop, self.screen_loop,
                        self.touch_loop, self.log_loop, self.netmode_loop):  # fmt: skip

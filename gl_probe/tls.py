@@ -1,7 +1,7 @@
-"""HTTPS for the phone page, from Probe Deck's tls.py: a certificate made on the router with openssl,
+"""HTTPS for GL Probe's page, from Probe Deck's tls.py: a certificate made on the router with openssl,
 or one you upload (for example signed by your own CA), and an SSL context the server swaps live.
 
-Files: /etc/pcc-router/tls/cert.pem and key.pem (plain PEM, root-only).
+Files: /etc/gl-probe/tls/cert.pem and key.pem (plain PEM, root-only).
 """
 
 import ipaddress
@@ -119,7 +119,7 @@ class TLS:
             r = subprocess.run(
                 ["openssl", "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:prime256v1", "-nodes",
                  "-sha256", "-days", str(days), "-keyout", str(key), "-out", str(cert),
-                 "-subj", f"/CN={cn}/O=PorkChopCheck", "-addext", f"subjectAltName={san}",
+                 "-subj", f"/CN={cn}/O=GL Probe", "-addext", f"subjectAltName={san}",
                  "-addext", "keyUsage=critical,digitalSignature", "-addext", "extendedKeyUsage=serverAuth",
                  "-addext", "basicConstraints=critical,CA:FALSE"],
                 capture_output=True, text=True, timeout=60)  # fmt: skip

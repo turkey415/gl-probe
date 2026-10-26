@@ -1,10 +1,10 @@
 """What the router has learned about the port its WAN is plugged into, and the verdict on it.
 
 Pure logic: frames, link changes, the WAN's DHCP status and check results are handed in by the
-service (service.py), and snapshot() gives everything for the screen and the phone page. Nothing
+service (service.py), and snapshot() gives everything for the screen and the page. Nothing
 here touches the network, so it is tested on a PC (tests/test_router.py).
 
-Frames are decoded by PorkChopCheck's own pc_net.classify, the same decoders the desktop app uses.
+Frames are decoded by pc_net.classify, PorkChopCheck's decoders (pc_net.py is copied from PorkChopCheck).
 """
 
 import threading
